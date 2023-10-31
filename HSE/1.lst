@@ -1,0 +1,171 @@
+ARM GAS  1.s 			page 1
+
+
+   1              		@cw32f030c8
+   2              		@编译器ARM-NONE-EABI
+   3              	
+   4              		.thumb
+   5              		.syntax unified
+   6              		.section .text
+   7              	vectors:
+   8 0000 00010020 		.word zhanding
+   9 0004 C1000000 		.word kaishi + 1
+  10 0008 1B010000 		.word _nmi	+1
+  11 000c 1B010000 		.word _Hard_Fault +1
+  12 0010 00000000 		.word 0
+  13 0014 00000000 		.word 0
+  14 0018 00000000 		.word 0
+  15 001c 00000000 		.word 0
+  16 0020 00000000 		.word 0
+  17 0024 00000000 		.word 0
+  18 0028 00000000 		.word 0
+  19 002c 1B010000 		.word _svc_handler +1
+  20 0030 00000000 		.word 0
+  21 0034 00000000 		.word 0
+  22 0038 1B010000 		.word _pendsv_handler +1
+  23 003c 1B010000 		.word _systickzhongduan +1  @ 15
+  24 0040 1B010000 		.word aaa +1                @ 0		WDT
+  25 0044 1B010000 		.word aaa +1                @ 1		LVD
+  26 0048 1B010000 		.word aaa +1                @ 2	
+  27 004c 1B010000 		.word aaa +1                @ 3		FLASHRAM
+  28 0050 1B010000 		.word aaa +1                @ 4		RCC
+  29 0054 1B010000 		.word aaa +1         	    @ 5		GPIOA
+  30 0058 1B010000 		.word aaa +1                @ 6		GPIOB
+  31 005c 1B010000 		.word aaa +1                @ 7		GPIOC
+  32 0060 1B010000 		.word aaa +1                @ 8
+  33 0064 1B010000 		.word aaa +1                @ 9
+  34 0068 1B010000 		.word aaa +1                @ 10
+  35 006c 1B010000 		.word aaa +1                @ 11
+  36 0070 1B010000 		.word aaa +1                @ 12	ADC
+  37 0074 1B010000 		.word aaa +1                @ 13	ATIM
+  38 0078 1B010000 		.word aaa +1                @ 14	VC1
+  39 007c 1B010000 		.word aaa +1                @ 15	VC2
+  40 0080 1B010000 		.word aaa +1                @ 16	GTIM
+  41 0084 1B010000 		.word aaa +1                @ 17
+  42 0088 1B010000 		.word aaa +1                @ 18
+  43 008c 1B010000 		.word aaa +1                @ 19
+  44 0090 1B010000 		.word aaa +1                @ 20	BTIM1
+  45 0094 1B010000 		.word aaa +1                @ 21	BTIM2
+  46 0098 1B010000 		.word aaa +1                @ 22	BTIM3
+  47 009c 1B010000 		.word aaa +1                @ 23	I2C
+  48 00a0 1B010000 		.word aaa +1                @ 24
+  49 00a4 1B010000 		.word aaa +1                @ 25	SPI
+  50 00a8 1B010000 		.word aaa +1                @ 26
+  51 00ac 1B010000 		.word aaa +1                @ 27	UART1
+  52 00b0 1B010000 		.word aaa +1		    @ 28	UART2
+  53 00b4 1B010000 		.word aaa +1		    @ 29
+  54 00b8 1B010000 		.word aaa +1		    @ 30	AWT
+  55 00bc 1B010000 	 	.word aaa +1		    @ 31
+  56              	kaishi:
+  57              	@	bkpt # 1
+ARM GAS  1.s 			page 2
+
+
+  58              	shizhong:
+  59 00c0 1648     		ldr r0, = 0x40022000   @FLASH访问控制
+  60 00c2 1749     		ldr r1, = 0x5a51001a
+  61 00c4 4160     		str r1, [r0, # 0x04]           @FLASH缓冲 缓冲开启
+  62 00c6 1748     		ldr r0, = 0x40010000 @ rcc
+  63 00c8 1749     		ldr r1, = 0x5a5a0183
+  64 00ca 4160     		str r1, [r0, # 0x04]
+  65              	deng_hse:
+  66 00cc C169     		ldr r1, [r0, # 0x1c]
+  67 00ce 0903     		lsls r1, r1, # 12
+  68 00d0 FCD5     		bpl deng_hse
+  69 00d2 1649     		ldr r1, = 0x53884
+  70 00d4 8162     		str r1, [r0, # 0x28]
+  71 00d6 1649     		ldr r1, = 0x5a5a0187
+  72 00d8 4160     		str r1, [r0, # 0x04]
+  73              	deng_pll:	
+  74 00da 816A     		ldr r1, [r0, # 0x28]
+  75 00dc 0904     		lsls r1, r1, # 16
+  76 00de FCD5     		bpl deng_pll
+  77 00e0 1449     		ldr r1, = 0x5a5a002a
+  78 00e2 0160     		str r1, [r0]	@pll作为系统时钟	
+  79 00e4 1449     		ldr r1, = 0x5a5a0186
+  80 00e6 4160     		str r1, [r0, # 0x04]	@关HSI
+  81              		
+  82              	__wai_she_shi_zhong:
+  83 00e8 0E48     		ldr r0, = 0x40010000
+  84              		@+0x30 0=DMA,1=FLASH,2=CRC,4=PA,5=PB,6=PC,9=PF
+  85 00ea 1449     		ldr r1, = 0x273
+  86 00ec 0163     		str r1, [r0, # 0x30]
+  87              	
+  88              		@+0X34 2=ADC,4=VC,7=ATIM,8=SPI1,9=UART1,10=GTIM3
+  89              		@11=GTIM4,12=BTIM,13=AWT
+  90              		
+  91              		@+0X38 1=GTIM1,2=GTIM2,3=RTC,4=WWDT,5=IWDT,6=SPI2
+  92              		@7=UART2,8=UART3,11=I2C1,12=I2C2
+  93              	
+  94              		
+  95              	
+  96              	__pa_chu_shi_hua:	
+  97 00ee 144A     		ldr r2, = 0x8000	@pa15
+  98 00f0 144B     		ldr r3, = 0x1fff	
+  99 00f2 1548     		ldr r0, = 0x48000000 @pa
+ 100 00f4 1549     		ldr r1, = 0x7fff
+ 101 00f6 C361     		str r3, [r0, # 0x1c]
+ 102 00f8 0160     		str r1, [r0]
+ 103              		
+ 104              	ting:
+ 105 00fa 00F001F8 		bl __led_kai_guan
+ 106 00fe FCE7     		b ting
+ 107              		
+ 108              	__led_kai_guan:
+ 109 0100 07B4     		push {r0-r2}
+ 110 0102 1148     		ldr r0, = 0x48000000	@pa
+ 111 0104 0E49     		ldr r1, = 0x8000
+ 112 0106 C165     		str r1, [r0, # 0x5c]
+ 113 0108 114A     		ldr r2, = 0xfffff
+ 114              	__led_kai_yan_shi:
+ARM GAS  1.s 			page 3
+
+
+ 115 010a 013A     		subs r2, r2, # 1
+ 116 010c FDD1     		bne __led_kai_yan_shi
+ 117 010e 8165     		str r1, [r0, # 0x58]
+ 118 0110 0F4A     		ldr r2, = 0xfffff
+ 119              	__led_guan_yan_shi:
+ 120 0112 013A     		subs r2, r2, # 1
+ 121 0114 FDD1     		bne __led_guan_yan_shi
+ 122 0116 07BC     		pop {r0-r2}
+ 123 0118 7047     		bx lr
+ 124              	
+ 125              	_nmi:
+ 126              	_Hard_Fault:
+ 127              	_svc_handler:
+ 128              	_pendsv_handler:	
+ 129              	_systickzhongduan:
+ 130              	aaa:
+ 131 011a 7047     		bx lr
+ 132              		
+ 133              		.section .data
+ 134              		.equ zhanding,	0x20000100
+ 135              		
+ARM GAS  1.s 			page 4
+
+
+DEFINED SYMBOLS
+                 1.s:7      .text:00000000 vectors
+                            *ABS*:20000100 zhanding
+                 1.s:56     .text:000000c0 kaishi
+                 1.s:125    .text:0000011a _nmi
+                 1.s:126    .text:0000011a _Hard_Fault
+                 1.s:127    .text:0000011a _svc_handler
+                 1.s:128    .text:0000011a _pendsv_handler
+                 1.s:129    .text:0000011a _systickzhongduan
+                 1.s:130    .text:0000011a aaa
+                 1.s:58     .text:000000c0 shizhong
+                            .text:00000000 $d
+                 1.s:59     .text:000000c0 $t
+                 1.s:65     .text:000000cc deng_hse
+                 1.s:73     .text:000000da deng_pll
+                 1.s:82     .text:000000e8 __wai_she_shi_zhong
+                 1.s:96     .text:000000ee __pa_chu_shi_hua
+                 1.s:104    .text:000000fa ting
+                 1.s:108    .text:00000100 __led_kai_guan
+                 1.s:114    .text:0000010a __led_kai_yan_shi
+                 1.s:119    .text:00000112 __led_guan_yan_shi
+                 1.s:135    .text:0000011c $d
+
+NO UNDEFINED SYMBOLS
