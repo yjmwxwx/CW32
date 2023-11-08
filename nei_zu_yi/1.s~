@@ -1,4 +1,4 @@
-	@cw32f030c8
+	@cw32f030c8t6
 	@编译器ARM-NONE-EABI
 	@电池内租测试仪
 	@yjmwxwx-2023-11-06
@@ -105,8 +105,6 @@ _neicunqinglingxunhuan:
 	str r1, [r0]
 	cmp r0, r2
 	bne _neicunqinglingxunhuan
-	
-
 __pa_chu_shi_hua:
 	ldr r0, = 0x48000000 @pa
 	ldr r1, = 0x7Dff
@@ -226,8 +224,32 @@ __DMA_chu_shi_hua:
 	ldr r1, = cos_sin_biao_1k
 	str r1, [r0]
 
-	b ting
+__huifu_chuchang:
+	ldr r0, = 0xf000
+	ldr r1, [r0]
+	ldr r2, = 0xffffffff
+	cmp r2, r1
+	bne __tiaoguo_chuchang_chushihua
+	ldr r0, = chuchang_jiaozhun_r
+	ldr r1, [r0]
+	ldr r2, [r0, # 0x04]
+	ldr r3, [r0, # 0x08]
+	ldr r4, [r0, # 0x0c]
+	ldr r5, [r0, # 0x10]
+	ldr r6, [r0, # 0x14]
+	ldr r7, [r0, # 0x18]
+	ldr r0, = chuchang_r
+	str r1, [r0]
+	str r2, [r0, # 0x04]
+	str r3, [r0, # 0x08]
+	str r4, [r0, # 0x0c]
+	str r5, [r0, # 0x10]
+	str r6, [r0, # 0x14]
+	str r7, [r0, # 0x18]
+	bl __xie_flash
+__tiaoguo_chuchang_chushihua:	
 
+	
 __anjian0:
 	b ting
 __anjian1:
@@ -451,7 +473,7 @@ __yy:
 
 	subs r7, r7, # 1
 	bne __yy
-@	bl __xie_flash
+	bl __xie_flash
 	bkpt # 1
 
 __duanlu_qingling_xianshi:
@@ -523,7 +545,7 @@ __yy2:
 	str r0, [r1, # 0x04]
 	subs r7, r7, # 1
 	bne __yy2
-	@       bl __xie_flash
+	bl __xie_flash
 	bkpt # 1
 	
 
@@ -628,7 +650,7 @@ __yy3:
 
 	subs r7, r7, # 1
 	bne __yy3
-@	bl __xie_flash
+	bl __xie_flash
 	bkpt # 1
 
 __shezhi_z_r_xianshi:
@@ -649,12 +671,51 @@ __ren_wu_diao_du:
 	mov pc, r2
 	
 __xie_flash:
+	
 	ldr r0, = 0x40022000
 	ldr r1, = 0x5a5a0000
 	str r1, [r0, # 0x04]
-	ldr r1, = 0x5a5a0010
+	ldr r1, = 0x5a5a0002
 	str r1, [r0]
+	ldr r1, = 0x5a5a8000	@#15
+	str r1, [r0, # 0x08]	@页解锁
+	movs r1, # 0xaa
+	ldr r2, = 0xf000
+	str r1, [r2]
+	bl __flash_mang
 	
+	ldr r1, = 0x5a5a0001
+	str r1, [r0]
+	ldr r2, = 0xf000
+	ldr r1, = chuchang_r
+	movs r3, # 6
+__xie_flash_xun_huan:
+	ldr r4, [r1]
+	str r4, [r2]
+	adds r1, r1, # 0x04
+	adds r2, r2, # 0x04
+	bl __flash_mang
+	subs r3, r3, # 1
+	bne __xie_flash_xun_huan
+
+	
+        ldr r1, = 0x5a5a0000
+	str r1, [r0]
+	ldr r1, = 0x5a5a0000    @#15
+	str r1, [r0, # 0x08]    @页解锁
+
+	ldr r0, = 0xe000ed0c
+	ldr r1, = 0x05fa0004
+	str r1, [r0]          		@复位
+	bkpt # 33
+	
+__flash_mang:
+	push {r1}
+	ldr r1, [r0]
+	lsls r1, r1, # 26
+	bmi __flash_mang
+	pop {r1}
+	bx lr
 
 	
 	
@@ -665,6 +726,7 @@ ting:
 	ldr r1, = f_r
 	ldr r2, = f_chuchang_r
 	bl __xianshi_neizu
+
 	b __ren_wu_diao_du
 	.ltorg
 
@@ -24603,22 +24665,30 @@ aaa:
 
 	
 	.section .data
-	.equ zhanding,		0x200000c0
+	.equ f_chuchang_r,	0xf000
+	.equ f_chuchang_mr,	0xf004
+	.equ f_jiaodu_r,	0xf008
+	.equ f_jiaodu_i,	0xf00c
+	.equ f_r,		0xf010
+	.equ f_mr,		0xf014
+
+	
+	.equ zhanding,		0x200000fc
 	.equ dianyabiao,	0x20000100
 	.equ lvboqizhizhen,             0x200010b0
 	.equ lvboqihuanchong,           0x200010b8
-	.equ lvboqizhizhen1,            0x20001700
-	.equ lvboqihuanchong1,          0x20001708
+	.equ lvboqizhizhen1,            0x20001800
+	.equ lvboqihuanchong1,          0x20001808
 
 
 
 
-	.equ chuchang_r,		0x20001e00
-	.equ chuchang_mr,		0x20001e04
-	.equ jiaodu_r,			0x20001e08
-	.equ jiaodu_i,			0x20001e10
-	.equ r,				0x20001e14
-	.equ mr,			0x20001e18
+	.equ chuchang_r,		0x20001f00
+	.equ chuchang_mr,		0x20001f04
+	.equ jiaodu_r,			0x20001f08
+	.equ jiaodu_i,			0x20001f1c
+	.equ r,				0x20001f10
+	.equ mr,			0x20001f14
 
 	.equ qiwang_jiaodu,		0x20001fb8
 	.equ jiaodu,			0x20001fbc
@@ -24664,17 +24734,17 @@ atan_biao:			@角度
 	.int 0x00168000,0x000D4853,0x000704A3,0x00039000,0x0001C9C5,0x0000E51B,0x00007295,0x0000394B,0x00001CA5,0x00000E52,0x00000729,0x00000394,0x000001CA,0x000000E5,0x00000072,0x00000039,0x0000001C,0x0000000E,0x00000007,0x00000003,0x00000001
 	
 	.align 4
-f_chuchang_r:
-	.int 32768 
-f_chuchang_mr:
-	.int 32768
-f_jiaodu_r:
+chuchang_jiaozhun_r:
+	.int 27027
+chuchang_jiaozhun_mr:
+	.int 23389
+chuchang_jiaodu_r:
 	.int -7073
-f_jiaodu_i:
+chuchang_jiaodu_i:
 	.int -31995
-f_r:
+chuchnag_duanlu_qingling_r:
 	.int 0
-f_mr:
+chuchang_duanlu_qingling_mr:
 	.int 0
 	
 	.align 4

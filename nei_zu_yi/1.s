@@ -225,27 +225,26 @@ __DMA_chu_shi_hua:
 	str r1, [r0]
 
 __huifu_chuchang:
-	ldr r0, = 0xf000
+	ldr r0, = f_chuchang_r
 	ldr r1, [r0]
 	ldr r2, = 0xffffffff
 	cmp r2, r1
 	bne __tiaoguo_chuchang_chushihua
 	ldr r0, = chuchang_jiaozhun_r
-	ldr r1, [r0]
-	ldr r2, [r0, # 0x04]
-	ldr r3, [r0, # 0x08]
-	ldr r4, [r0, # 0x0c]
-	ldr r5, [r0, # 0x10]
-	ldr r6, [r0, # 0x14]
-	ldr r7, [r0, # 0x18]
-	ldr r0, = chuchang_r
-	str r1, [r0]
-	str r2, [r0, # 0x04]
-	str r3, [r0, # 0x08]
-	str r4, [r0, # 0x0c]
-	str r5, [r0, # 0x10]
-	str r6, [r0, # 0x14]
-	str r7, [r0, # 0x18]
+	ldr r1, = chuchang_r
+	movs r2, # 10
+__du_chuchang_xunhuan:
+	ldr r3, [r0]
+	str r3, [r1]
+	adds r0, r0, # 0x04
+	adds r1, r1, # 0x04
+	subs r2, r2, # 1
+	bne __du_chuchang_xunhuan
+	
+
+
+
+	
 	bl __xie_flash
 __tiaoguo_chuchang_chushihua:	
 
@@ -254,6 +253,7 @@ __anjian0:
 	b ting
 __anjian1:
 __dangwei_jia_deng_songshou:
+	bl __jiaozhun_yanshi
 	bl __an_jian
 	cmp r0, # 3
 	beq __anjian_3
@@ -289,8 +289,8 @@ __xianshi_jiaodu:
 	ldr r1, = shangbi_i
 	ldr r0, [r0]
 	ldr r1, [r1]
-	asrs r0, r0, # 1
-	asrs r1, r1, # 1
+	asrs r0, r0, # 2
+	asrs r1, r1, # 2
 	bl __atan2_ji_suan
 	asrs r0, r0, # 15
 	str r0, [r2]
@@ -340,6 +340,7 @@ __anjian3_xunhuan:
 	beq __jinru_jiaozhun_caidan_deng_songshou
 	b __anjian3_xunhuan
 __jiaozhun_caidan_jia_deng_songshou:
+	bl __jiaozhun_yanshi
 	bl __an_jian
 	cmp r0, # 3
 	beq __tiaochu_anjian3
@@ -385,6 +386,7 @@ __xianshi_jiaozhun_caidan:
 	pop {r0-r2,pc}
 
 __jinru_jiaozhun_caidan_deng_songshou:
+	bl __jiaozhun_yanshi
 	bl __an_jian
 	cmp r0, # 3
 	beq __anjian3
@@ -508,13 +510,16 @@ __shezhi_jiaodu1:
 __jiaodu_jia:
 	bl __an_jian
 	cmp r0, # 3
-	beq __jiaodu_shezhi_wan
+	beq __jiaodu_shezhi_baocun
 	cmp r0, # 0
 	beq __jiaodu_jiale
 	bl __shezhi_jiaodu_xianshi
 	b __jiaodu_jia
 __jiaodu_jiale:
-	ldr r1, = qiwang_jiaodu
+        ldr r0, = liangcheng
+	ldr r0, [r0]
+	lsls r0, r0, # 2
+	ldr r1, = qiwang_jiaodu_r
 	ldr r2, [r1, r0]
 	adds r2, r2, # 1
 	str r2, [r1, r0]
@@ -528,12 +533,22 @@ __jiaodu_jian:
 	bl __shezhi_jiaodu_xianshi
 	b __jiaodu_jian
 __jiaodu_jianle:
-	ldr r1, = qiwang_jiaodu
-	ldr r2, [r1]
+	ldr r0, = liangcheng
+	ldr r0, [r0]
+	lsls r0, r0, # 2
+	ldr r1, = qiwang_jiaodu_r
+	ldr r2, [r1, r0]
 	subs r2, r2, # 1
-	str r2, [r1]
+	str r2, [r1, r0]
 	b __shezhi_jiaodu1
 
+__jiaodu_shezhi_baocun:
+	ldr r0, = liangcheng
+	ldr r1, [r0]
+	adds r1, r1, # 1
+	str r1, [r0]
+	cmp r1, # 2
+	bne __shezhi_jiaodu1
 __jiaodu_shezhi_wan:
 	ldr r7, = 0x8ffff
 __yy2:
@@ -550,33 +565,37 @@ __yy2:
 	
 
 __shezhi_jiaodu_xianshi:
-	push {r0-r3,lr}
-	ldr r0, = qiwang_jiaodu
+	push {r0-r4,lr}
+	ldr r0, = liangcheng
 	ldr r0, [r0]
+        ldr r1, = danwei_biao
+	ldrb r1, [r1, r0]
+	ldr r2, = danwei
+	str r1, [r2]
+	lsls r0, r0, # 2
+	ldr r1, = qiwang_jiaodu_r
+	ldr r0, [r1, r0]
 	bl __jisuan_cos_sin
 	mov r2, r0
 	mov r3, r1
+	ldr r4, = liangcheng
+	ldr r4, [r4]
+	lsls r4, r4, # 2
 	ldr r0, = jiaodu_r
 	ldr r1, = jiaodu_i
-	str r2, [r0]
-	str r3, [r1]
+	str r2, [r0, r4]
+	str r3, [r1, r4]
 	bl __xiangwei_xuanzhuan1
 	ldr r0, = z_r
 	ldr r1, = z_i
 	ldr r0, [r0]
 	ldr r1, [r1]
-	asrs r0, r0, # 1
-	asrs r1, r1, # 1
+	asrs r0, r0, # 2
+	asrs r1, r1, # 2
 	bl __atan2_ji_suan
 	asrs r0, r0, # 15
 	bl __xianshi_j_d
-	pop {r0-r3,pc}
-	
-
-
-
-
-
+	pop {r0-r4,pc}
 	
 
 	
@@ -688,7 +707,7 @@ __xie_flash:
 	str r1, [r0]
 	ldr r2, = 0xf000
 	ldr r1, = chuchang_r
-	movs r3, # 6
+	movs r3, # 10
 __xie_flash_xun_huan:
 	ldr r4, [r1]
 	str r4, [r2]
@@ -717,8 +736,15 @@ __flash_mang:
 	pop {r1}
 	bx lr
 
-	
-	
+
+__jiaozhun_yanshi:
+	push {r0}
+	ldr r0, = 0x1ffff
+__jiaozhun_yanshi_xunhuan:
+	subs r0, r0, # 1
+	bne __jiaozhun_yanshi_xunhuan
+	pop {r0}
+	bx lr
 ting:
 	bl __xiangwei_xuanzhuan
 	ldr r0, = z_r
@@ -735,21 +761,15 @@ ting:
 
 __du_jiaozhunbiao:
 	ldr r0, = f_chuchang_r
-	ldr r1, [r0]
-	ldr r2, [r0, # 0x04]
-	ldr r3, [r0, # 0x08]
-	ldr r4, [r0, # 0x0c]
-	ldr r5, [r0, # 0x10]
-	ldr r6, [r0, # 0x14]
-	ldr r7, [r0, # 0x18]
-	ldr r0, = chuchang_r
-	str r1, [r0]
-	str r2, [r0, # 0x04]
-	str r3, [r0, # 0x08]
-	str r4, [r0, # 0x0c]
-	str r5, [r0, # 0x10]
-	str r6, [r0, # 0x14]
-	str r7, [r0, # 0x18]
+	ldr r1, = chuchang_r
+	movs r2, # 10
+__du_jiaozhunbiao_xunhuan:
+	ldr r3, [r0]
+	str r3, [r1]
+	adds r0, r0, # 0x04
+	adds r1, r1, # 0x04
+	subs r2, r2, # 1
+	bne __du_jiaozhunbiao_xunhuan
 	bx lr
 
 
@@ -931,10 +951,13 @@ __xuan_zhuan_wan:
 
 __xiangwei_xuanzhuan:
 	push {r2-r7,lr}
+	ldr r4, = liangcheng
+	ldr r4, [r4]
+	lsls r4, r4, # 2
 	ldr r0, = f_jiaodu_r  @-3697
 	ldr r1, = f_jiaodu_i  @32558
-	ldr r0, [r0]
-	ldr r1, [r1]
+	ldr r0, [r0, r4]
+	ldr r1, [r1, r4]
 	ldr r2, = shangbi_r
 	ldr r3, = shangbi_i
 	ldr r4, [r2]
@@ -957,10 +980,13 @@ __xiangwei_xuanzhuan:
 
 __xiangwei_xuanzhuan1:
 	push {r2-r7,lr}
+	ldr r4, = liangcheng
+	ldr r4, [r4]
+	lsls r4, r4, # 2
 	ldr r0, = jiaodu_r
 	ldr r1, = jiaodu_i
-	ldr r0, [r0]
-	ldr r1, [r1]
+	ldr r0, [r0, r4]
+	ldr r1, [r1, r4]
 	ldr r2, = shangbi_r
 	ldr r3, = shangbi_i
 	ldr r4, [r2]
@@ -24665,12 +24691,16 @@ aaa:
 
 	
 	.section .data
-	.equ f_chuchang_r,	0xf000
-	.equ f_chuchang_mr,	0xf004
-	.equ f_jiaodu_r,	0xf008
-	.equ f_jiaodu_i,	0xf00c
-	.equ f_r,		0xf010
-	.equ f_mr,		0xf014
+	.equ f_chuchang_r,		0xf000
+	.equ f_chuchang_mr,		0xf004
+	.equ f_jiaodu_r,		0xf008
+	.equ f_jiaodu_mr_r,		0xf00c
+	.equ f_jiaodu_i,		0xf010
+	.equ f_jiaodu_mr_i,		0xf014
+	.equ f_r,			0xf018
+	.equ f_mr,			0xf01c
+	.equ f_qiwang_jiaodu_r,		0xf020
+	.equ f_qiwang_jiaodu_mr,	0xf024
 
 	
 	.equ zhanding,		0x200000fc
@@ -24686,11 +24716,14 @@ aaa:
 	.equ chuchang_r,		0x20001f00
 	.equ chuchang_mr,		0x20001f04
 	.equ jiaodu_r,			0x20001f08
-	.equ jiaodu_i,			0x20001f1c
-	.equ r,				0x20001f10
-	.equ mr,			0x20001f14
-
-	.equ qiwang_jiaodu,		0x20001fb8
+	.equ jiaodu_mr_r,		0x20001f0c
+	.equ jiaodu_i,			0x20001f10
+	.equ jiaodu_mr_i,		0x20001f14
+	.equ r,				0x20001f18
+	.equ mr,			0x20001f1c
+	.equ qiwang_jiaodu_r,		0x20001f20
+	.equ qiwang_jiaodu_mr,		0x20001f24
+	
 	.equ jiaodu,			0x20001fbc
 	.equ jiaozhun_bianhao,		0x20001fc0
 	.equ z_r,			0x20001fc4
@@ -24735,23 +24768,31 @@ atan_biao:			@角度
 	
 	.align 4
 chuchang_jiaozhun_r:
-	.int 27027
+	.int 29751
 chuchang_jiaozhun_mr:
-	.int 23389
+	.int 28543
 chuchang_jiaodu_r:
 	.int -7073
+chuchang_jiaodu_mr_r:
+	.int -7073
 chuchang_jiaodu_i:
+	.int -31995
+chuchang_jiaodu_mr_i:
 	.int -31995
 chuchnag_duanlu_qingling_r:
 	.int 0
 chuchang_duanlu_qingling_mr:
 	.int 0
+chuchang_qiwang_jiaodu:
+	.int -10200
+chuchang_qiwang_jiaodu_r:
+	.int -10200
 	
 	.align 4
 danwei_biao:
 	.byte 0x40,0x80
 xiaoshudian_weizhi:
-	.byte 1,1
+	.byte 1,3
 	
 	.align 4
 an_jian_biao:
