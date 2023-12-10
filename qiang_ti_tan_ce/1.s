@@ -254,6 +254,8 @@ __xiangwei_xuanzhuan_yanshi:
 	asrs r1, r1, # 2
 	bl __atan2_ji_suan
 	asrs r0, r0, # 15
+	ldr r1, = -9000
+	adds r0, r0, r1
 	bl __jisuan_cos_sin
 	ldr r2, = jiaodu_r
 	ldr r3, = jiaodu_i
@@ -264,14 +266,11 @@ __xiangwei_xuanzhuan_yanshi:
 
 	
 __anjian0:
-	ldr r0, = z_i
-	ldr r1, = qingling_i
-	ldr r2, [r0]
-	ldr r3, [r1]
-	subs r2, r2, r3
-	str r2, [r0]
+	
+
 	b ting
 __anjian1:
+
 
 	ldr r0, = shangbi_r
 	ldr r1, = shangbi_i
@@ -281,25 +280,19 @@ __anjian1:
 	asrs r1, r1, # 2
 	bl __atan2_ji_suan
 	asrs r0, r0, # 15
+	ldr r1, = -9000
+	adds r0, r0, r1
 	bl __jisuan_cos_sin
 	ldr r2, = jiaodu_r
 	ldr r3, = jiaodu_i
 	str r0, [r2]
 	str r1, [r3]
-
-	ldr r0, = z_i
-	ldr r1, = qingling_i
-	ldr r0, [r0]
-	str r0, [r1]
-
-__anjian1_deng_songshou:	
-	bl __an_jian
-	cmp r0, # 1
-	beq __anjian1_deng_songshou
-	cmp r0, # 0
-	bne __anjian1_deng_songshou
-
+	bl __xiangwei_xuanzhuan
 	
+	ldr r2, = qingling_r
+	ldr r3, = qingling_i
+	str r0, [r2]
+	str r1, [r3]
 	b __ren_wu_diao_du
 	
 	ldr r0, = shangbi_r
@@ -313,6 +306,11 @@ __anjian1_deng_songshou:
 	b __ren_wu_diao_du
 	
 __anjian2:
+	ldr r2, = qingling_r
+	ldr r3, = qingling_i
+	movs r0, # 0
+	str r0, [r2]
+	str r0, [r3]
 	
 	b __ren_wu_diao_du
 __anjian3:
@@ -427,10 +425,17 @@ __an_jian:
 	bx lr
 ting:
 	bl __xiangwei_xuanzhuan
-	ldr r0, = z_r
-	ldr r1,	= z_i
-	ldr r0, [r0]
-	ldr r1, [r1]
+	ldr r4, = z_r
+	ldr r5, = z_i
+	ldr r2, = qingling_r
+	ldr r3, = qingling_i
+	ldr r6, [r2]
+	ldr r7, [r3]
+	subs r0, r0, r6
+	subs r1, r1, r7
+	str r0, [r4]
+	str r1, [r5]
+	
 	asrs r0, r0, # 2
 	asrs r1, r1, # 2
 	bl __atan2_ji_suan
@@ -572,7 +577,7 @@ __xianshi_z_jiaodu:
 
 
 __xiangwei_xuanzhuan:
-	push {r0-r7,lr}
+	push {r2-r7,lr}
 	ldr r0, = jiaodu_r  @-3697
 	ldr r1, = jiaodu_i  @32558
 	ldr r0, [r0]
@@ -591,11 +596,11 @@ __xiangwei_xuanzhuan:
 	subs r1, r6, r1
 	asrs r0, r0, # 15
 	asrs r1, r1, # 15
-	ldr r2, = z_r
-	ldr r3, = z_i
-	str r0, [r2]
-	str r1, [r3]
-	pop {r0-r7,pc}
+@	ldr r2, = z_r
+@	ldr r3, = z_i
+@	str r0, [r2]
+@	str r1, [r3]
+	pop {r2-r7,pc}
 
 	
 __jisuan_cos_sin:								@jd
