@@ -539,7 +539,51 @@ __laba_fanhui:
 	
 
 
-
+__ji_suan_fu_du:				    @ 计算幅度
+	@ 入r0= 实部，r1= 虚部
+	@ 出r0 = 幅度
+	@ Mag ~=Alpha * max(|I|, |Q|) + Beta * min(|I|, |Q|)
+	@ Alpha * Max + Beta * Min
+	push {r1-r3,lr}
+	movs r0, r0
+	bpl _shibubushifushu
+	mvns r0, r0                             @ 是负数转成正数
+	adds r0, r0, # 1
+_shibubushifushu:				                               @ 实部不是负数
+	movs r1, r1
+	bpl _xububushifushu
+	mvns r1, r1                             @ 是负数转成正数
+	adds r1, r1, # 1
+_xububushifushu:				                                @ 虚部不是负数
+	cmp r0, # 0
+	bne _panduanxubushibushi0
+	mov r0, r1
+	pop {r1-r3,pc}
+_panduanxubushibushi0:
+	cmp r1, # 0
+	bne _jisuanfudu1
+	pop {r1-r3,pc}
+_jisuanfudu1:
+	ldr r2, = 31066		@ Alpha q15 0.948059448969
+	ldr r3, = 12867		@ Beta q15 0.392699081699
+	cmp r1, r0
+	bhi _alpha_min_beta_max
+_alpha_max_beta_min:
+	muls r0, r0, r2
+	muls r1, r1, r3
+	asrs r0, r0, # 15
+	asrs r1, r1, # 15
+	adds r0, r0, r1
+	movs r1, # 1
+	pop {r1-r3,pc}
+_alpha_min_beta_max:
+	muls r0, r0, r3
+	muls r1, r1, r2
+	asrs r0, r0, # 15
+	asrs r1, r1, # 15
+	adds r0, r0, r1
+	movs r1, # 0
+	pop {r1-r3,pc}
 	
 
 __xianshi_jiaodu:
@@ -24639,8 +24683,11 @@ __suan_dft:
 
 	
 __systick_fanhui:
-	ldr r0, = z_i
+	ldr r0, = z_r
+	ldr r1, = z_i
 	ldr r0, [r0]
+	ldr r1, [r1]
+	bl __ji_suan_fu_du
 	bl __laba
 	
 	ldr r0, = 0xe0000d04
