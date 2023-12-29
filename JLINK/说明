@@ -1,1 +1,1 @@
-复制Devices到JLINK安装目录，把CW32.xml里内容复制到JLinkDevices.xml
+复制Devices和JLinkDevices.xml到JLINK安装目录
