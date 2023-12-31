@@ -1,7 +1,7 @@
 	@cw32f030c8t6
 	@编译器ARM-NONE-EABI
 	@墙体探测仪
-	@yjmwxwx-2023-11-20
+	@yjmwxwx-2024-01-01
 	.thumb
 	.syntax unified
 	.section .text
@@ -230,6 +230,7 @@ __spi1_chu_shi_hua:
 
 	bl __lcd_chushihua
 	bl __lcd_qingping
+
 	ldr r0, = yjmwxwx
 	movs r1, # 18           @显示几个字符
 	ldr r2, = 0x0000         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
@@ -424,6 +425,32 @@ __an_jian:
 	lsrs r0, r0, # 30
 	bx lr
 ting:
+
+        ldr r0, = z_r
+	ldr r1, = z_i
+	ldr r0, [r0]
+	ldr r1, [r1]
+
+__zr_shi_bu_shi_fu:	
+	movs r2, r0
+	bpl __zi_shi_bu_shi_fu
+	mvns r2, r2
+	adds r2, r2, # 1
+__zi_shi_bu_shi_fu:
+	movs r3, r1
+	bpl __bi_jiao_zr_zi_da_xiao
+	mvns r3, r3
+	adds r3, r3, # 1
+__bi_jiao_zr_zi_da_xiao:	
+	cmp r2, r3
+        bhi __zr_xian_shi
+        mov r0, r1
+__zr_xian_shi:
+	bl __xianshi_jindu_tiao
+
+
+
+	
 	bl __xiangwei_xuanzhuan
 	ldr r4, = z_r
 	ldr r5, = z_i
@@ -436,13 +463,13 @@ ting:
 	str r0, [r4]
 	str r1, [r5]
 	
-	asrs r0, r0, # 2
-	asrs r1, r1, # 2
-	bl __atan2_ji_suan
-	asrs r0, r0, # 15
-	ldr r1, = z_jiao_du
-	str r0, [r1]
-	bl __xianshi_jiaodu
+@	asrs r0, r0, # 2
+@	asrs r1, r1, # 2
+@	bl __atan2_ji_suan
+@	asrs r0, r0, # 15
+@	ldr r1, = z_jiao_du
+@	str r0, [r1]
+@	bl __xianshi_jiaodu
 	
 		
 	ldr r0, = z_r
@@ -509,6 +536,100 @@ __xianshi_z_i:
 	
 	.ltorg
 
+
+
+
+
+__xianshi_jindu_tiao:
+	@入口R0 = 0-133
+        push {r1-r4,lr}
+
+	ldr r1, = ling_min_du
+	ldr r1, [r1]
+	asrs r1, r1, # 5
+	asrs r0, r0, r1
+
+	adds r0, r0, # 64
+	mov r4, r0
+	bl __xianshi_fudu
+	
+        ldr r0, = 0x40013000
+        movs r1, # 0x00
+        str r1, [r0, # 0x0c]            @A0=0
+        ldr r2, = 0xff
+        bl __lcd_yanshi
+        movs r0, # 0x10
+        bl __xie_spi1
+        movs r0, # 0
+        bl __xie_spi1
+        movs r0, # 0xb0
+        bl __xie_spi1
+        movs r2, # 0xff
+        bl __lcd_yanshi
+
+        ldr r0, = 0x40013000
+        movs r1, # 0x01
+        str r1, [r0, # 0x0c]            @A0=1
+        ldr r2, = 0xff
+        bl __lcd_yanshi
+        movs r1, # 64
+@	movs r4, # 30
+	cmp r4, r1
+	bhi __jindu_tiao_zheng
+	movs r1, # 0
+__jindu_tiao_fu_heng_sao:
+	cmp r1, r4
+	bhi __jindu_tiao_liang
+	movs r0, # 0
+	b __xie_jin_du_tiao
+__jindu_tiao_liang:	
+	movs r0, # 0xff
+__xie_jin_du_tiao:	
+        bl __xie_spi1
+        adds r1, r1, # 1
+	cmp r1, # 64
+        bne __jindu_tiao_fu_heng_sao
+	
+	movs r1, # 64
+	movs r2, # 133
+__jindu_tiao_zheng_qingling:	
+	movs r0, # 0
+	bl __xie_spi1
+        adds r1, r1, # 1
+	cmp r1, r2
+        bne __jindu_tiao_zheng_qingling
+	pop {r1-r4,pc}
+
+__jindu_tiao_zheng:
+        movs r1, # 64
+__jindu_tiao_fu_qingling:
+        movs r0, # 0
+        bl __xie_spi1
+	subs r1, r1, # 1
+        cmp r1, r2
+        bne __jindu_tiao_fu_qingling
+	movs r1, # 64
+	movs r2, # 133
+__jindu_tiao_zheng_heng_sao:
+        cmp r1, r4
+        bls __jindu_tiao_liang1
+        movs r0, # 0
+        b __xie_jin_du_tiao1
+__jindu_tiao_liang1:
+        movs r0, # 0xff
+__xie_jin_du_tiao1:
+        bl __xie_spi1
+        adds r1, r1, # 1
+	cmp r1, r2
+        bne __jindu_tiao_zheng_heng_sao
+
+	pop {r1-r4,pc}
+
+
+
+
+
+	
 
 __laba:
 	@入口R0
@@ -584,6 +705,41 @@ _alpha_min_beta_max:
 	adds r0, r0, r1
 	movs r1, # 0
 	pop {r1-r3,pc}
+
+
+
+
+__xianshi_fudu:
+        push {r1-r4,lr}
+        movs r4, r0
+        bmi __fudu_shi_fu
+__fudu_bushi_fu:
+        ldr r0, = kong
+        movs r1, # 1           @显示几个字符
+        movs r2, # 0x01         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+        bl __xie_ascii
+        b __xianshi_z_fudu
+__fudu_shi_fu:
+        ldr r0, = _fu
+        movs r1, # 1           @显示几个字符
+        movs r2, # 0x01         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+        bl __xie_ascii
+        mvns r4, r4
+        adds r4, r4, # 1
+__xianshi_z_fudu:
+        mov r0, r4
+        movs r1, # 6    @转换几个字符
+        ldr r2, = asciibiao
+        movs r3, # 3             @小数点位置
+        bl __zhuanascii
+        ldr r0, = asciibiao
+        movs r1, # 6           @显示几个字符
+        ldr r2, = 0x1001         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+        bl __xie_ascii
+        pop {r1-r4,pc}
+        .ltorg
+
+
 	
 
 __xianshi_jiaodu:
@@ -24723,7 +24879,7 @@ __systick_fanhui:
 	.equ asciibiao,			0x20001fe0
 
 yjmwxwx:
-	.ascii "yjmwxwx 2023 12 10"
+	.ascii "yjmwxwx 2024 01 01"
 
 she_zhi_wan:
 	.ascii "she zhi wan"
