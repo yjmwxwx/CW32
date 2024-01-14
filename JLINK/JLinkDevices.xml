@@ -2856,8 +2856,96 @@
   </Device>
 
 
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32F003F4"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00000c00"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00005000"
+		   Loader="Devices/WHXY/FlashCW32F003.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
 
 
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32L083"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00006000"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00040000"
+		   Loader="Devices/WHXY/FlashCW32L083.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
+
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32L031"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00002000"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00010000"
+		   Loader="Devices/WHXY/FlashCW32L031.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
+
+
+
+
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32F020"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00002000"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00008000"
+		   Loader="Devices/WHXY/FlashCW32F020.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
+
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32F002"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00000800"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00004000"
+		   Loader="Devices/WHXY/FlashCW32F002.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
+
+
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32W031"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00002000"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00010000"
+		   Loader="Devices/WHXY/FlashCW32W031.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32L052"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00002000"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00010000"
+		   Loader="Devices/WHXY/FlashCW32L052.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
+
+
+<Device>
+    <ChipInfo Vendor="WHXY" Name="CW32R031"
+	      Core="JLINK_CORE_CORTEX_M0" WorkRAMAddr="0x20000000"
+	      WorkRAMSize="0x00002000"/>
+    <FlashBankInfo Name="Internal Flash" BaseAddr="0x00"
+		   MaxSize="0x00010000"
+		   Loader="Devices/WHXY/FlashCW32R031.FLM"
+		   LoaderType="FLASH_ALGO_TYPE_OPEN" AlwaysPresent="1"/>
+  </Device>
 
 
   
