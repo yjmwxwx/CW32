@@ -21,7 +21,7 @@ vectors:
 	.word 0
 	.word 0
 	.word _pendsv_handler +1
-	.word _systickzhongduan +1  @ 15
+	.word _systick_zhongduan +1  @ 15
 	.word aaa +1                @ 0		WDT
 	.word aaa +1                @ 1		LVD
 	.word aaa +1                @ 2		RTC
@@ -128,9 +128,9 @@ __pa_chu_shi_hua:
 __pb_chu_shi_hua:
 
 	ldr r0, = 0x48000400 @pb
-	ldr r1, = 0xffc7
+	ldr r1, = 0xfdc7
 	str r1, [r0]            @0=输出，1=输入
-	ldr r1, = 0xff07
+	ldr r1, = 0xfd07
 	str r1, [r0, # 0x1c]    @0=数字，1=模拟
 
 	movs r1, # 0xc0
@@ -186,7 +186,7 @@ __deng_chu_shi_hua:
 	str r3, [r4, # 8]
 	movs r3, # 0x07
 	str r3, [r4]    @systick 开
-
+	
 	
 __DMA_chu_shi_hua:
 	ldr r0, = 0x40020000
@@ -242,27 +242,60 @@ __spi1_chu_shi_hua:
 	ldr r2, = 0x0000         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
 	bl __xie_ascii
 
-
-
-
-
-	ldr r0, = 0xffffff
-__xiangwei_xuanzhuan_yanshi:
-	subs r0, r0, # 1
-	bne __xiangwei_xuanzhuan_yanshi
 	bl __lcd_qingping
+
 	
+
+__chuchuang_chushihua:
+	ldr r0, = 0xf000
+	ldr r2, = 0xffffffff
+	ldr r1, [r0]
+	cmp r1, r2
+	bne __flash_jiaozhun_shuju
+	ldr r7, = chuchang_cos_jiaodu_r
+	b __du_jiaozhun_biao_dao_nei_cun
+__flash_jiaozhun_shuju:
+	ldr r7, = flash_cos_jiaodu_r
+__du_jiaozhun_biao_dao_nei_cun:	
+	ldr r6, = cos_jiaodu_r
+	ldr r0, [r7]
+	ldr r1, [r7, # 0x04]
+	ldr r2, [r7, # 0x08]
+	ldr r3, [r7, # 0x0c]
+	ldr r4, [r7, # 0x10]
+	ldr r5, [r7, # 0x14]
+	str r0, [r6]
+	str r1, [r6, # 0x04]
+	str r2, [r6, # 0x08]
+	str r3, [r6, # 0x0c]
+	str r4, [r6, # 0x10]
+	str r5, [r6, # 0x14]
+
+	
+
+__anjian0:
+	
+	b ting
+__anjian1:
+	bkpt # 1
+__anjian2:
+	bl __an_jian
+	cmp r0, # 2
+	beq __anjian_2
+	cmp r0, # 0
+	bne __anjian2
+	bl __xie_flash
+__anjian_2:	
         ldr r0, = cos_r
-	ldr r1, = cos_i
-	ldr r0, [r0]
-	ldr r1, [r1]
-	asrs r0, r0, # 2
-	asrs r1, r1, # 2
-	bl __atan2_ji_suan
-	asrs r0, r0, # 15
+        ldr r1, = cos_i
+        ldr r0, [r0]
+        ldr r1, [r1]
+
+        bl __atan2_ji_suan
+        asrs r0, r0, # 15
 	bl __jisuan_cos_sin
 	ldr r2, = cos_jiaodu_r
-	ldr r3, = cos_jiaodu_i
+        ldr r3, = cos_jiaodu_i
 	str r0, [r2]
 	str r1, [r3]
 
@@ -270,9 +303,8 @@ __xiangwei_xuanzhuan_yanshi:
         ldr r1, = sin_i
         ldr r0, [r0]
         ldr r1, [r1]
-        asrs r0, r0, # 2
-        asrs r1, r1, # 2
-        bl __atan2_ji_suan
+
+	bl __atan2_ji_suan
         asrs r0, r0, # 15
         bl __jisuan_cos_sin
         ldr r2, = sin_jiaodu_r
@@ -280,18 +312,25 @@ __xiangwei_xuanzhuan_yanshi:
         str r0, [r2]
         str r1, [r3]
 
-	ldr r0, = xuanzhuan_kaiguan
-	movs r1, # 1
-	str r1, [r0]
-	
 
-__anjian0:
-	
+	ldr r0, = cos
+        ldr r1, = sin
+        ldr r0, [r0]
+        ldr r1, [r1]
+	bl __atan2_ji_suan
+        asrs r0, r0, # 15
+        bl __jisuan_cos_sin
+        ldr r2, = xuanzhuan_jiaodu_r
+        ldr r3, = xuanzhuan_jiaodu_i
+        str r0, [r2]
+        str r1, [r3]
 
-	b ting
-__anjian1:	
-__anjian2:
+	
+	b __anjian2
+
+	
 __anjian3:
+	bkpt # 3
        	
 __ren_wu_diao_du:
 	bl __an_jian
@@ -313,10 +352,6 @@ __an_jian:
 ting:
 
 	bl __xianshi_shangxia_bi
-	bl __xianshi_cos_sin_fudu
-
-
-
 
 	ldr r0, = xuanbian_jiaodu
 	ldr r4, [r0]
@@ -350,6 +385,20 @@ __xianshi_z_r:
 
 
 
+	ldr r0, = jiao_sudu
+	ldr r0, [r0]
+	ldr r1, = 2730666
+	muls r0, r0, r1
+	lsrs r0, r0, # 14
+	movs r1, # 8
+	ldr r2, = asciibiao
+        movs r3, # 5            @小数点位置
+	bl _zhuanascii
+        movs r0, # 8            @写几个字
+	movs r1, # 48           @字库单字长度
+        movs r2, # 3            @宽度
+        ldr r3, = 0x1102              @lcd位置
+        bl __xie_lcd_ascii
 
 
 
@@ -365,7 +414,51 @@ __xianshi_z_r:
 
 
 
+__xie_flash:
+	ldr r0, = 0x40022000
+	ldr r1, = 0x5a5a0001
+	str r1, [r0, # 0x04]
+	ldr r1, = 0x5a5a0002
+	str r1, [r0]
+	ldr r1, = 0x5a5a8000	@#15
+	str r1, [r0, # 0x08]	@页解锁
+	movs r1, # 0xaa
+	ldr r2, = 0xf000
+	str r1, [r2]
+	bl __flash_mang
+	
+	ldr r1, = 0x5a5a0001
+	str r1, [r0]
+	ldr r2, = 0xf000
+	ldr r1, = cos_jiaodu_r
+	movs r3, # 10
+__xie_flash_xun_huan:
+	ldr r4, [r1]
+	str r4, [r2]
+	adds r1, r1, # 0x04
+	adds r2, r2, # 0x04
+	bl __flash_mang
+	subs r3, r3, # 1
+	bne __xie_flash_xun_huan
 
+	
+        ldr r1, = 0x5a5a0000
+	str r1, [r0]
+	ldr r1, = 0x5a5a0000    @#15
+	str r1, [r0, # 0x08]    @页上锁
+
+	ldr r0, = 0xe000ed0c
+	ldr r1, = 0x05fa0004
+	str r1, [r0]          		@复位
+	bkpt # 33
+	
+__flash_mang:
+	push {r1}
+	ldr r1, [r0]
+	lsls r1, r1, # 26
+	bmi __flash_mang
+	pop {r1}
+	bx lr
 	
 
 
@@ -766,9 +859,7 @@ __atan2_ji_suan:							@jt
 	mov r2, r8
 	push {r2}
 	ldr r3, = cordic_yong_cos_sin
-	movs r2, # 10
-	muls r0, r0, r2
-	muls r1, r1, r2
+
 	movs r2, # 0
 	mov r8, r2
 	ldr r4, = 9000
@@ -4510,7 +4601,7 @@ _pendsv_handler:
 aaa:
 	bx lr
 	
-_systickzhongduan:
+_systick_zhongduan:
 	push {r0-r6,lr}
 
 	ldr r0, = 0x40020000
@@ -4529,10 +4620,10 @@ _systickzhongduan:
         str r1, [r0, # 0x40]    @模式设置和开DMA
 
 	bl __dft
-	asrs r0, r0, # 5
-	asrs r1, r1, # 5
-	asrs r2, r2, # 5
-	asrs r3, r3, # 5
+	asrs r0, r0, # 4
+	asrs r1, r1, # 4
+	asrs r2, r2, # 4
+	asrs r3, r3, # 4
 	ldr r4, = cos_r
 	str r0, [r4]
 	str r1, [r4, # 0x04]
@@ -4540,10 +4631,10 @@ _systickzhongduan:
 	str r3, [r4, # 0x0c]
 	mov r5, r0
 	mov r6, r1
-	ldr r4, = xuanzhuan_kaiguan
-	ldr r4, [r4]
-	cmp r4, # 1
-	bne __systick_fanhui
+@	ldr r4, = xuanzhuan_kaiguan
+@	ldr r4, [r4]
+@	cmp r4, # 1
+@	bne __systick_fanhui
 
 	ldr r0, = sin_jiaodu_r
 	ldr r1, = sin_jiaodu_i
@@ -4566,16 +4657,57 @@ _systickzhongduan:
 	str r0, [r2]
 	str r1, [r2, # 0x04]
 
-	mov r1, r4
-	asrs r0, r0, # 3
-	asrs r1, r1, # 3
+
+
+	
+
+	mov r2, r0
+	mov r3, r4
+	ldr r0, = xuanzhuan_jiaodu_r
+	ldr r1, = xuanzhuan_jiaodu_i
+	ldr r0, [r0]
+	ldr r1, [r1]
+	bl __xiangwei_xuanzhuan
+	ldr r2, = jiaodu_r
+	ldr r3, = jiaodu_i
+	str r0, [r2]
+	str r1, [r3]
+
 	bl __atan2_ji_suan
 	ldr r1, = xuanbian_jiaodu
 	str r0, [r1]
+	asrs r0, r0, # 15
+
+
+
+	ldr r3, = jiao_sudu
+	ldr r1, = shangci_jiaodu
+	ldr r2, [r1]
+	subs r2, r2, r0
+	bpl __baocun_jiao_sudu
+	mvns r2, r2
+	adds r2, r2, # 1
+__baocun_jiao_sudu:	
+	str r2, [r3]
+	str r0, [r1]
+
+
+
+
+
 	
-	
-	
+	ldr r3, =100
+	ldr r1, = 0x48000400
+	ldr r2, = 0x200
+	cmp r0, r3
+	bcc __zheng_shi_deng_liang
+	str r2, [r1, # 0x58]
+	b __systick_fanhui
+__zheng_shi_deng_liang:
+	str r2, [r1, # 0x5c]
 __systick_fanhui:
+
+	
 	ldr r0, = 0xe0000d04
 	ldr r1, = 0x02000000
 	str r1, [r0]                 @ 清除SYSTICK中断
@@ -4584,6 +4716,15 @@ __systick_fanhui:
 
 
 	.section .data
+        .equ flash_cos_jiaodu_r,              0xf000
+        .equ flash_cos_jiaodu_i,              0xf004
+        .equ flash_sin_jiaodu_r,              0xf008
+        .equ flash_sin_jiaodu_i,              0xf00c
+        .equ flash_xuanzhuan_jiaodu_r,        0xf010
+        .equ flashxuanzhuan_jiaodu_i,         0xf014
+
+
+	
 	.equ zhanding,			0x200000fc
 	.equ dianyabiao,		0x20000100
 	.equ dianyabiao1,		0x200010b0
@@ -4592,13 +4733,19 @@ __systick_fanhui:
 	.equ lvboqizhizhen1,            0x20001800
 	.equ lvboqihuanchong1,          0x20001808
 
-	.equ cos,			0x20001f64
-	.equ sin,			0x20001f6c
-	.equ xuanzhuan_kaiguan,		0x20001f74
-	.equ cos_jiaodu_r,		0x20001f78
-	.equ cos_jiaodu_i,		0x20001f7c
-	.equ sin_jiaodu_r,		0x20001f80
-	.equ sin_jiaodu_i,		0x20001f84	
+	.equ jiao_sudu,			0x20001f4c
+	.equ shangci_jiaodu,		0x20001f50
+	.equ jiaodu_r,			0x20001f54
+	.equ jiaodu_i,			0x20001f58
+	.equ cos_jiaodu_r,		0x20001f5c
+	.equ cos_jiaodu_i,		0x20001f60
+	.equ sin_jiaodu_r,		0x20001f64
+	.equ sin_jiaodu_i,		0x20001f68
+	.equ xuanzhuan_jiaodu_r,	0x20001f6c
+	.equ xuanzhuan_jiaodu_i,	0x20001f70
+	.equ cos,			0x20001f74
+	.equ sin,			0x20001f7c
+	.equ xuanzhuan_kaiguan,		0x20001f84
 	.equ xuanbian_jiaodu,		0x20001f88
 	.equ cos_fudu,			0x20001f8c
 	.equ sin_fudu,			0x20001f90
@@ -4619,6 +4766,21 @@ __systick_fanhui:
 	.equ cossin,			0x20001fdc 
 	.equ asciibiao,			0x20001fe0
 
+
+chuchang_cos_jiaodu_r:
+	.int 32768
+chuchang_cos_jiaodu_i:
+	.int 0
+chuchang_sin_jiaodu_r:
+	.int 32768
+chuchang_sin_jiaodu_i:
+	.int 0
+chuchang_jiaodu_r:
+	.int 32768
+chuchang_jiaodu_i:
+	.int 0
+
+	
 yjmwxwx:
 	.ascii "yjmwxwx 2024 01 01"
 kong:
