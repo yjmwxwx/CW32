@@ -1,15 +1,7 @@
 	@cw32f030c8t6
 	@编译器ARM-NONE-EABI
-	@旋转变压器软件解码
-	@数据分辨率3600字，每秒10000次更新，带宽1591hz，最大跟踪速度每分钟95400转
-	@spi主机单发模式，
-	@格式16位
-	@MSB在前
-	@串行时钟相位配置前边沿采样 / 后边沿移位
-	@串行时钟极性配置待机时低电平
-	@CW32 43脚拉低后再拉高角度自动调零，新烧写的单片机必须执行本操作
-	@自动调整零后偏差较大应重复调零
-	@yjmwxwx-2024-02-05
+	@旋转变压器软件解码，每秒10000次更新，带宽1591hz
+	@yjmwxwx-2024-02-04
 	.thumb
 	.syntax unified
 	.section .text
@@ -148,11 +140,11 @@ __pb_chu_shi_hua:
 	str r1, [r0, # 0x18]	@复用0-7
 
 	
-@__pc_chu_shi_hua:	
-@	ldr r3, = 0xc000	
-@	ldr r0, = 0x48000800 @pc
-@	str r3, [r0, # 0x1c]
-@	str r3, [r0]
+__pc_chu_shi_hua:	
+	ldr r3, = 0xc000	
+	ldr r0, = 0x48000800 @pc
+	str r3, [r0, # 0x1c]
+	str r3, [r0]
 
 
 __GTIM3_chu_shi_hua:
@@ -243,25 +235,18 @@ __DMA_chu_shi_hua:
 	
 __spi1_chu_shi_hua:
 	ldr r0, = 0x40013000
-	ldr r1, = 0x7e4c	@8位	@0x7e74 16位
+	ldr r1, = 0x5e74	@8位	@0x7e74 16位
 	str r1, [r0]
 
-	ldr r3, = 0x40013000
-       movs r2, # 0x00
-       str r2, [r3, # 0x0c]
+	bl __lcd_chushihua
+	bl __lcd_qingping
 
+	ldr r0, = yjmwxwx
+	movs r1, # 18           @显示几个字符
+	ldr r2, = 0x0000         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+	bl __xie_ascii
 
-	
-
-@	bl __lcd_chushihua
-@	bl __lcd_qingping
-
-@	ldr r0, = yjmwxwx
-@	movs r1, # 18           @显示几个字符
-@	ldr r2, = 0x0000         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
-@	bl __xie_ascii
-
-@	bl __lcd_qingping
+	bl __lcd_qingping
 
 	
 
@@ -370,7 +355,7 @@ __an_jian:
 	bx lr
 ting:
 	bl __xiang_yi
-	b __ren_wu_diao_du
+
 	
 	
 @	bl __xianshi_shangxia_bi
@@ -604,7 +589,7 @@ __xianshi_fudu:
         movs r4, r0
         bmi __fudu_shi_fu
 __fudu_bushi_fu:
-       ldr r0, = kong
+        ldr r0, = kong
         movs r1, # 1           @显示几个字符
         movs r2, # 0x01         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
         bl __xie_ascii
@@ -1081,7 +1066,7 @@ __busy_zong_xian_mang:
 
 
 __xie_spi2:
-	@发送R0 16位
+	@发送R0，R1，16位
         push {r2-r3}
         ldr r3, = 0x40013000
        movs r2, # 0x00
@@ -1099,7 +1084,21 @@ __busy_zong_xian_mang1:
         ldr r2, [r3, # 0x10]
         lsls r2, r2, # 23
         bmi __busy_zong_xian_mang1
-	
+
+__deng_huan_chong_kong4:
+	ldr r2, [r3, # 0x10]
+	lsls r2, r2, # 31
+	bpl __deng_huan_chong_kong4
+	str r1, [r3, # 0x18]
+__deng_huan_chong_kong5:
+	ldr r2, [r3, # 0x10]
+	lsls r2, r2, # 31
+        bpl __deng_huan_chong_kong5
+__busy_zong_xian_mang2:
+        ldr r2, [r3, # 0x10]
+	lsls r2, r2, # 23
+	bmi __busy_zong_xian_mang2
+
        movs r2, # 0x01
        str r2, [r3, # 0x0c]
         pop {r2-r3}
@@ -4836,31 +4835,19 @@ __baocun_jiao_su_du:
 	str r0, [r1]
 
 	
-
-
-       ldr r3, = 0x40013000
-       str r0, [r3, # 0x18] 
-
-
-
-
+@	mov r1, r2
+@	bl __xie_spi2
 	
-@	ldr r3, =100
-@	ldr r1, = 0x48000400
-@	ldr r2, = 0x200
-@	cmp r0, r3
-@	bcc __zheng_shi_deng_liang
-@	str r2, [r1, # 0x58]
-@	b __systick_fanhui
-@__zheng_shi_deng_liang:
-@	str r2, [r1, # 0x5c]
+	ldr r3, =100
+	ldr r1, = 0x48000400
+	ldr r2, = 0x200
+	cmp r0, r3
+	bcc __zheng_shi_deng_liang
+	str r2, [r1, # 0x58]
+	b __systick_fanhui
+__zheng_shi_deng_liang:
+	str r2, [r1, # 0x5c]
 __systick_fanhui:
-
-
-
-
-
-
 
 	
 	ldr r0, = 0xe0000d04
@@ -4947,7 +4934,7 @@ chuchang_jiaodu_i:
 
 	
 yjmwxwx:
-	.ascii "yjmwxwx 2024 02 05"
+	.ascii "yjmwxwx 2024 01 01"
 kong:
 	.int 0x20202020
 fu:

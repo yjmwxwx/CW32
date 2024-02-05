@@ -1,15 +1,7 @@
 	@cw32f030c8t6
 	@编译器ARM-NONE-EABI
-	@旋转变压器软件解码
-	@数据分辨率3600字，每秒10000次更新，带宽1591hz，最大跟踪速度每分钟95400转
-	@spi主机单发模式，
-	@格式16位
-	@MSB在前
-	@串行时钟相位配置前边沿采样 / 后边沿移位
-	@串行时钟极性配置待机时低电平
-	@CW32 43脚拉低后再拉高角度自动调零，新烧写的单片机必须执行本操作
-	@自动调整零后偏差较大应重复调零
-	@yjmwxwx-2024-02-05
+	@SPI接收，LCD显示
+	@yjmwxwx-2024-02-04
 	.thumb
 	.syntax unified
 	.section .text
@@ -78,6 +70,10 @@ __wai_she_shi_zhong:
         @+0X38 1=GTIM1,2=GTIM2,3=RTC,4=WWDT,5=IWDT,6=SPI2
         @7=UART2,8=UART3,11=I2C1,12=I2C2
 
+	ldr r1, = 0x40
+	str r1, [r0, # 0x38]
+
+	
 
 
 	
@@ -118,16 +114,16 @@ _neicunqinglingxunhuan:
 	bne _neicunqinglingxunhuan
 __pa_chu_shi_hua:
 	ldr r0, = 0x48000000 @pa
-	ldr r1, = 0x7Dff
+	ldr r1, = 0x7fff
 	str r1, [r0]		@0=输出，1=输入
-	ldr r1, = 0x1Dff
+	ldr r1, = 0x1fff
 	str r1, [r0, # 0x1c]	@0=数字，1=模拟
 
 
 
 
 	
-	ldr r1, = 0x50000060
+	ldr r1, = 0x50000000
 	str r1, [r0, # 0x14]	@复用8-15
 	@str r1, [r0, # 0x18]	@复用0-7
 
@@ -138,7 +134,7 @@ __pb_chu_shi_hua:
 	ldr r0, = 0x48000400 @pb
 	ldr r1, = 0xfdc7
 	str r1, [r0]            @0=输出，1=输入
-	ldr r1, = 0xfd07
+	ldr r1, = 0x4d07
 	str r1, [r0, # 0x1c]    @0=数字，1=模拟
 
 	movs r1, # 0xc0
@@ -147,14 +143,83 @@ __pb_chu_shi_hua:
 	ldr r1, = 0x505000
 	str r1, [r0, # 0x18]	@复用0-7
 
+	ldr r1, = 0x40440000
+	str r1, [r0, # 0x14]
 	
-@__pc_chu_shi_hua:	
-@	ldr r3, = 0xc000	
-@	ldr r0, = 0x48000800 @pc
-@	str r3, [r0, # 0x1c]
-@	str r3, [r0]
+	
+__pc_chu_shi_hua:	
+	ldr r3, = 0xc000	
+	ldr r0, = 0x48000800 @pc
+	str r3, [r0, # 0x1c]
+	str r3, [r0]
 
 
+__spi1_chu_shi_hua:
+        ldr r0, = 0x40013000
+        ldr r1, = 0x5e74        @8位    @0x7e74 16位
+        str r1, [r0]
+
+
+__spi2_chu_shi_hua:
+	ldr r0, = 0x40003800
+        ldr r1, = 0xbc40
+        str r1, [r0]
+
+
+
+
+
+	
+        bl __lcd_chushihua
+	bl __lcd_qingping
+
+	ldr r0, = yjmwxwx
+	movs r1, # 18           @显示几个字符
+	ldr r2, = 0x0000         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+	bl __xie_ascii
+
+@        bl __lcd_qingping
+
+
+	ldr r1, = 0x48000400
+	ldr r2, = 0x200
+
+	str r2, [r1, # 0x58]
+
+__xian_shi:
+        ldr r0, = 0x40003818
+        ldr r0, [r0]
+        bl __xian_shi_jiao_du
+        b __xian_shi
+
+
+	
+tingting:
+	ldr r0, = 0x40003818
+        ldr r0, [r0]
+	ldr r3, =100
+	ldr r1, = 0x48000400
+	ldr r2, = 0x200
+	cmp r0, r3
+	bcc __zheng_shi_deng_liang1
+	str r2, [r1, # 0x58]
+	b tingting
+__zheng_shi_deng_liang1:
+	str r2, [r1, # 0x5c]
+	b tingting
+
+
+
+
+
+
+
+
+
+
+
+
+	
 __GTIM3_chu_shi_hua:
 	ldr r0, = 0x40014000
 	ldr r1, = 2399	
@@ -240,28 +305,6 @@ __DMA_chu_shi_hua:
 
 
 
-	
-__spi1_chu_shi_hua:
-	ldr r0, = 0x40013000
-	ldr r1, = 0x7e4c	@8位	@0x7e74 16位
-	str r1, [r0]
-
-	ldr r3, = 0x40013000
-       movs r2, # 0x00
-       str r2, [r3, # 0x0c]
-
-
-	
-
-@	bl __lcd_chushihua
-@	bl __lcd_qingping
-
-@	ldr r0, = yjmwxwx
-@	movs r1, # 18           @显示几个字符
-@	ldr r2, = 0x0000         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
-@	bl __xie_ascii
-
-@	bl __lcd_qingping
 
 	
 
@@ -370,43 +413,10 @@ __an_jian:
 	bx lr
 ting:
 	bl __xiang_yi
-	b __ren_wu_diao_du
+
 	
 	
 @	bl __xianshi_shangxia_bi
-
-	ldr r0, = xuanbian_jiaodu
-	ldr r4, [r0]
-	movs r4, r4
-	bpl __xianshi_zr
-__z_r_shi_fu:
-	mvns r4, r4
-	adds r4, r4, # 1
-	ldr r0, = fu
-	movs r1, # 2           @显示几个字符
-	ldr r2, = 0x0006         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
-	bl __xie_ascii
-	b __xianshi_z_r
-__xianshi_zr:
-	ldr r0, = kong
-	movs r1, # 2           @显示几个字符
-	ldr r2, = 0x0006         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
-	bl __xie_ascii
-__xianshi_z_r:
-	mov r0, r4
-	movs r1, # 6
-	ldr r2, = asciibiao
-	movs r3, # 3            @小数点位置
-	bl _zhuanascii
-	movs r0, # 6            @写几个字
-	movs r1, # 48           @字库单字长度
-	movs r2, # 3            @宽度
-	ldr r3, = 0x1105              @lcd位置
-	bl __xie_lcd_ascii
-
-
-
-
 
 
        ldr r0, = jiao_sudu
@@ -441,6 +451,40 @@ __xianshi_z_r:
 	.ltorg
 
 
+__xian_shi_jiao_du:
+	@入口R0
+	push {r1-r4,lr}
+        movs r4, r0
+        bpl __xianshi_zr
+__z_r_shi_fu:
+        mvns r4, r4
+        adds r4, r4, # 1
+        ldr r0, = fu
+        movs r1, # 2           @显示几个字符
+        ldr r2, = 0x0006         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+        bl __xie_ascii
+        b __xianshi_z_r
+__xianshi_zr:
+        ldr r0, = kong
+        movs r1, # 2           @显示几个字符
+        ldr r2, = 0x0006         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
+        bl __xie_ascii
+__xianshi_z_r:
+        mov r0, r4
+        movs r1, # 6
+        ldr r2, = asciibiao
+        movs r3, # 3            @小数点位置
+        bl _zhuanascii
+        movs r0, # 6            @写几个字
+        movs r1, # 48           @字库单字长度
+        movs r2, # 3            @宽度
+        ldr r3, = 0x1105              @lcd位置
+        bl __xie_lcd_ascii
+	pop {r1-r4,pc}
+
+
+
+	
 
 
 __xiang_yi:
@@ -604,7 +648,7 @@ __xianshi_fudu:
         movs r4, r0
         bmi __fudu_shi_fu
 __fudu_bushi_fu:
-       ldr r0, = kong
+        ldr r0, = kong
         movs r1, # 1           @显示几个字符
         movs r2, # 0x01         @LCD位置lcd位置(高8位0-0x83,低8位0-7)
         bl __xie_ascii
@@ -1081,7 +1125,7 @@ __busy_zong_xian_mang:
 
 
 __xie_spi2:
-	@发送R0 16位
+	@发送R0，R1，16位
         push {r2-r3}
         ldr r3, = 0x40013000
        movs r2, # 0x00
@@ -1099,7 +1143,21 @@ __busy_zong_xian_mang1:
         ldr r2, [r3, # 0x10]
         lsls r2, r2, # 23
         bmi __busy_zong_xian_mang1
-	
+
+__deng_huan_chong_kong4:
+	ldr r2, [r3, # 0x10]
+	lsls r2, r2, # 31
+	bpl __deng_huan_chong_kong4
+	str r1, [r3, # 0x18]
+__deng_huan_chong_kong5:
+	ldr r2, [r3, # 0x10]
+	lsls r2, r2, # 31
+        bpl __deng_huan_chong_kong5
+__busy_zong_xian_mang2:
+        ldr r2, [r3, # 0x10]
+	lsls r2, r2, # 23
+	bmi __busy_zong_xian_mang2
+
        movs r2, # 0x01
        str r2, [r3, # 0x0c]
         pop {r2-r3}
@@ -4836,31 +4894,19 @@ __baocun_jiao_su_du:
 	str r0, [r1]
 
 	
-
-
-       ldr r3, = 0x40013000
-       str r0, [r3, # 0x18] 
-
-
-
-
+@	mov r1, r2
+@	bl __xie_spi2
 	
-@	ldr r3, =100
-@	ldr r1, = 0x48000400
-@	ldr r2, = 0x200
-@	cmp r0, r3
-@	bcc __zheng_shi_deng_liang
-@	str r2, [r1, # 0x58]
-@	b __systick_fanhui
-@__zheng_shi_deng_liang:
-@	str r2, [r1, # 0x5c]
+	ldr r3, =100
+	ldr r1, = 0x48000400
+	ldr r2, = 0x200
+	cmp r0, r3
+	bcc __zheng_shi_deng_liang
+	str r2, [r1, # 0x58]
+	b __systick_fanhui
+__zheng_shi_deng_liang:
+	str r2, [r1, # 0x5c]
 __systick_fanhui:
-
-
-
-
-
-
 
 	
 	ldr r0, = 0xe0000d04
