@@ -186,7 +186,7 @@ __spi1_chu_shi_hua:
 
 
 	ldr r4, = 0xe000e010
-	ldr r3, = 2399	
+	ldr r3, = 2399
 	str r3, [r4, # 4]
 	str r3, [r4, # 8]
 	movs r3, # 0x07
@@ -233,7 +233,7 @@ __qudong_dianji1:
 
 __svpwm:
 	push {r1-r3,lr}
-	@r0=角度 0到6000
+	@r0=角度 0到6000，0-1000表示0-60度范围
 	mov r2, r0
 	ldr r1, = 1000
 	bl _chufa
@@ -245,12 +245,12 @@ __svpwm:
 	mov pc, r0
 	.align 4
 dian_ji_xiang_wei:	
-	.word __xiangwei_0_60 +1
-	.word __xiangwei_60_120 +1
-	.word __xiangwei_120_180 +1
-	.word __xiangwei_180_240 +1
-	.word __xiangwei_240_300 +1
-	.word __xiangwei_300_360 +1
+	.word __xiangwei_0_60 +1		@0-60度
+	.word __xiangwei_60_120 +1		@60-120度
+	.word __xiangwei_120_180 +1		@120-180度
+	.word __xiangwei_180_240 +1		@180-240度
+	.word __xiangwei_240_300 +1		@240-300度
+	.word __xiangwei_300_360 +1		@300-360度
 	
 __xiangwei_0_60:
 	ldr r1, = svpwm_biao
@@ -270,30 +270,23 @@ __xiangwei_0_60:
 	adds r1, r1, r2		@U1矢量 加  零矢量除2
 	adds r1, r1, r0		@U相定时器比较值计算 （U1矢量） 加 （U3矢量） 加 （零矢量除2）
 	adds r0, r0, r2		@V相定时器比较值计算  （U3矢量） 加 （零矢量除2）
+	ldr r3, = 0x40012c00                    @定时器基地址
 	
-	ldr r3, = 0x40012c00
+        str r1, [r3, # 0x3c]    @U_H            @U相高比较寄存器
+        str r1, [r3, # 0x40]    @U_L            @U相低比较寄存器
 
+	str r0, [r3, # 0x44]    @V_H            @V相高比较寄存器
+	str r0, [r3, # 0x48]    @V_L            @V相低比较寄存器
 
-	
+        str r2, [r3, # 0x4c]    @W_H            @W相高比较寄存器
+        str r2, [r3, # 0x50]    @W_L            @W相低比较寄存器
+	pop {r1-r3,pc}                          @返回
 
-	lsrs r1, r1, # 2
-	lsrs r0, r0, # 2
-	lsrs r2, r2, # 2
-
-        str r1, [r3, # 0x3c]	@U_H
-	str r1, [r3, # 0x40]	@U_L
-
-        str r0, [r3, # 0x44]    @V_H
-	str r0, [r3, # 0x48]    @V_L
-	
-        str r2, [r3, # 0x4c]	@W_H
-	str r2, [r3, # 0x50]	@W_L
-	pop {r1-r3,pc}
 
 	
 __xiangwei_60_120:
-	ldr r1, = 1000
-        subs r2, r2, r1
+	ldr r1, = 1000	
+        subs r2, r2, r1		@减去1000,因为X、Y查找表只有各1000点
 
         ldr r1, = svpwm_biao
         lsls r2, r2, # 2        @扩展成32位
@@ -309,55 +302,44 @@ __xiangwei_60_120:
         subs r2, r2, r1         @定时器ARR减U1矢量
         subs r2, r2, r0         @定时器ARR减U3矢量
         lsrs r2, r2, # 1        @W相定时器比较值计算 （零矢量除2）
-        adds r1, r1, r2         @U相定时器比较值计算 （U1矢量） 加 （U3矢量） 加 （零矢量除2）
-        ldr r0, = 1199
-        subs r0, r0, r2		@V相定时器比较值计算  （U3矢量） 加 （零矢量除2）
+        adds r1, r1, r2         @U相定时器比较值计算 （U1矢量） 加 （零矢量除2）
+        ldr r0, = 1199		@定时器最大计数值
+        subs r0, r0, r2		@V相定时器比较值计算  （定时器最大计数） 减 （零矢量除2）
 
-        ldr r3, = 0x40012c00
+        ldr r3, = 0x40012c00			@定时器基地址
+        str r1, [r3, # 0x3c]    @U_H		@U相高比较寄存器
+        str r1, [r3, # 0x40]    @U_L		@U相低比较寄存器
 
+        str r0, [r3, # 0x44]    @V_H		@V相高比较寄存器
+        str r0, [r3, # 0x48]    @V_L		@V相低比较寄存器
 
-        lsrs r1, r1, # 2
-        lsrs r0, r0, # 2
-        lsrs r2, r2, # 2
-
-	
-        str r1, [r3, # 0x3c]    @U_H
-        str r1, [r3, # 0x40]    @U_L
-
-        str r0, [r3, # 0x44]    @V_H
-        str r0, [r3, # 0x48]    @V_L
-
-        str r2, [r3, # 0x4c]    @W_H
-        str r2, [r3, # 0x50]    @W_L
-        pop {r1-r3,pc}
+        str r2, [r3, # 0x4c]    @W_H		@W相高比较寄存器
+        str r2, [r3, # 0x50]    @W_L		@W相低比较寄存器
+        pop {r1-r3,pc}				@返回
 
 
 __xiangwei_120_180:
 	ldr r1, = 2000
         subs r2, r2, r1
-                ldr r1, = svpwm_biao
-        lsls r2, r2, # 2        @扩展成32位
-        ldrh r0, [r1, r2]       @查表取出 x
-        adds r2, r2, # 2        @偏移16位
-        ldrh r1, [r1, r2]       @查表取出y
-        ldr r2, = 600           @PWM计数一半
-        muls r0, r0, r2         @ X乘定时器一半值得到U3矢量
-        muls r1, r1, r2         @ Y乘定时器一半值得到U1矢量
-        lsrs r0, r0, # 15       @Q15转整数
-        lsrs r1, r1, # 15       @Q15转整数
-        ldr r2, = 1199          @pwm定时器ARR
-        subs r2, r2, r1         @定时器ARR减U1矢量
-        subs r2, r2, r0         @定时器ARR减U3矢量
-        lsrs r2, r2, # 1        @W相定时器比较值计算 （零矢量除2）
-        adds r1, r1, r2         @U1矢量 加  零矢量除2
-        adds r1, r1, r0         @U相定时器比较值计算 （U1矢量） 加 （U3矢量） 加 （零矢量除2）
-        adds r0, r0, r2         @V相定时器比较值计算  （U3矢量） 加 （零矢量除2）
+        ldr r1, = svpwm_biao
+        lsls r2, r2, # 2       
+        ldrh r0, [r1, r2]      
+        adds r2, r2, # 2       
+        ldrh r1, [r1, r2]      
+        ldr r2, = 600          
+        muls r0, r0, r2        
+        muls r1, r1, r2        
+        lsrs r0, r0, # 15      
+        lsrs r1, r1, # 15      
+        ldr r2, = 1199         
+        subs r2, r2, r1        
+        subs r2, r2, r0        
+        lsrs r2, r2, # 1       
+        adds r1, r1, r2        
+        adds r1, r1, r0        
+        adds r0, r0, r2        
 
         ldr r3, = 0x40012c00
-
-	lsrs r1, r1, # 2
-        lsrs r0, r0, # 2
-        lsrs r2, r2, # 2
 
 	
 
@@ -374,31 +356,27 @@ __xiangwei_120_180:
 
 	
 __xiangwei_180_240:
-                ldr r1, = 3000
+        ldr r1, = 3000
         subs r2, r2, r1
         ldr r1, = svpwm_biao
-        lsls r2, r2, # 2        @扩展成32位
-        ldrh r0, [r1, r2]       @查表取出 x
-        adds r2, r2, # 2        @偏移16位
-        ldrh r1, [r1, r2]       @查表取出y
-        ldr r2, = 600           @PWM计数一半
-        muls r0, r0, r2         @ X乘定时器一半值得到U3矢量
-        muls r1, r1, r2         @ Y乘定时器一半值得到U1矢量
-        lsrs r0, r0, # 15       @Q15转整数
-        lsrs r1, r1, # 15       @Q15转整数
-        ldr r2, = 1199          @pwm定时器ARR
-        subs r2, r2, r1         @定时器ARR减U1矢量
-        subs r2, r2, r0         @定时器ARR减U3矢量
-        lsrs r2, r2, # 1        @W相定时器比较值计算 （零矢量除2）
-        adds r1, r1, r2         @U相定时器比较值计算 （U1矢量） 加 （U3矢量） 加 （零矢量除2）
+        lsls r2, r2, # 2       
+        ldrh r0, [r1, r2]      
+        adds r2, r2, # 2       
+        ldrh r1, [r1, r2]      
+        ldr r2, = 600          
+        muls r0, r0, r2        
+        muls r1, r1, r2        
+        lsrs r0, r0, # 15      
+        lsrs r1, r1, # 15      
+        ldr r2, = 1199         
+        subs r2, r2, r1        
+        subs r2, r2, r0        
+        lsrs r2, r2, # 1       
+        adds r1, r1, r2       
         ldr r0, = 1199
-        subs r0, r0, r2         @V相定时器比较值计算  （U3矢量） 加 （零矢量除2）
+        subs r0, r0, r2       
 
         ldr r3, = 0x40012c00
-
-	lsrs r1, r1, # 2
-        lsrs r0, r0, # 2
-        lsrs r2, r2, # 2
 
 
         str r2, [r3, # 0x3c]    @U_H
@@ -418,30 +396,27 @@ __xiangwei_240_300:
         ldr r1, =  4000
         subs r2, r2, r1
 
-	        ldr r1, = svpwm_biao
-	lsls r2, r2, # 2        @扩展成32位
-	ldrh r0, [r1, r2]       @查表取出 x
-        adds r2, r2, # 2        @偏移16位
-	ldrh r1, [r1, r2]       @查表取出y
-	ldr r2, = 600           @PWM计数一半
-        muls r0, r0, r2         @ X乘定时器一半值得到U3矢量
-        muls r1, r1, r2         @ Y乘定时器一半值得到U1矢量
-        lsrs r0, r0, # 15       @Q15转整数
-        lsrs r1, r1, # 15       @Q15转整数
-        ldr r2, = 1199          @pwm定时器ARR
-        subs r2, r2, r1         @定时器ARR减U1矢量
-        subs r2, r2, r0         @定时器ARR减U3矢量
-        lsrs r2, r2, # 1        @W相定时器比较值计算 （零矢量除2）
-        adds r1, r1, r2         @U1矢量 加  零矢量除2
-        adds r1, r1, r0         @U相定时器比较值计算 （U1矢量） 加 （U3矢量） 加 （零矢量除2）
-        adds r0, r0, r2         @V相定时器比较值计算  （U3矢量） 加 （零矢量除2）
+	ldr r1, = svpwm_biao
+	lsls r2, r2, # 2    
+	ldrh r0, [r1, r2]   
+        adds r2, r2, # 2    
+	ldrh r1, [r1, r2]   
+	ldr r2, = 600       
+        muls r0, r0, r2
+        muls r1, r1, r2       
+        lsrs r0, r0, # 15  
+        lsrs r1, r1, # 15  
+        ldr r2, = 1199     
+        subs r2, r2, r1    
+        subs r2, r2, r0    
+        lsrs r2, r2, # 1   
+        adds r1, r1, r2    
+        adds r1, r1, r0    
+        adds r0, r0, r2    
 
         ldr r3, = 0x40012c00
 
 
-        lsrs r1, r1, # 2
-        lsrs r0, r0, # 2
-        lsrs r2, r2, # 2
 
 	
 
@@ -463,28 +438,24 @@ __xiangwei_300_360:
         subs r2, r2, r1
 
 	ldr r1, = svpwm_biao
-        lsls r2, r2, # 2        @扩展成32位
-        ldrh r0, [r1, r2]       @查表取出 x
-        adds r2, r2, # 2        @偏移16位
-        ldrh r1, [r1, r2]       @查表取出y
-        ldr r2, = 600           @PWM计数一半
-        muls r0, r0, r2         @ X乘定时器一半值得到U3矢量
-        muls r1, r1, r2         @ Y乘定时器一半值得到U1矢量
-        lsrs r0, r0, # 15       @Q15转整数
-        lsrs r1, r1, # 15       @Q15转整数
-        ldr r2, = 1199          @pwm定时器ARR
-        subs r2, r2, r1         @定时器ARR减U1矢量
-        subs r2, r2, r0         @定时器ARR减U3矢量
-        lsrs r2, r2, # 1        @W相定时器比较值计算 （零矢量除2）
-        adds r1, r1, r2         @U相定时器比较值计算 （U1矢量） 加 （U3矢量） 加 （零矢量除2）
+        lsls r2, r2, # 2     
+        ldrh r0, [r1, r2]    
+        adds r2, r2, # 2     
+        ldrh r1, [r1, r2]    
+        ldr r2, = 600        
+        muls r0, r0, r2      
+        muls r1, r1, r2      
+        lsrs r0, r0, # 15    
+        lsrs r1, r1, # 15    
+        ldr r2, = 1199       
+        subs r2, r2, r1      
+        subs r2, r2, r0      
+        lsrs r2, r2, # 1     
+        adds r1, r1, r2      
         ldr r0, = 1199
-        subs r0, r0, r2         @V相定时器比较值计算  （U3矢量） 加 （零矢量除2）
+        subs r0, r0, r2      
 
         ldr r3, = 0x40012c00
-
-	lsrs r1, r1, # 2
-        lsrs r0, r0, # 2
-        lsrs r2, r2, # 2
 
 
         str r0, [r3, # 0x3c]    @U_H
@@ -984,8 +955,8 @@ aaa:
 _systick_zhongduan:
 	push {r0-r3,lr}
 
-	ldr r3, = 0x20000300
-	ldr r3, [r3]
+@	ldr r3, = 0x20000300
+@	ldr r3, [r3]
 	ldr r2, = 6000
 	ldr r1, = 0x20000100
 	ldr r0, [r1]
@@ -1007,7 +978,7 @@ __systick_fanhui:
 	
 	ldr r0, = 0xe0000d04
 	ldr r1, = 0x02000000
-	str r1, [r0]                 @ 清除SYSTICK中断
+	str r1, [r0]                 @ 清除SYSTICK断
 	pop {r0-r3,pc}
 
 
