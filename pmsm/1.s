@@ -1,7 +1,7 @@
 	@cw32f030c8t6
 	@编译器ARM-NONE-EABI
 	@永磁无刷电机控制
-	@yjmwxwx-2024-02-25
+	@yjmwxwx-2024-04-05
 	.thumb
 	.syntax unified
 	.section .text
@@ -79,6 +79,11 @@ __wai_she_shi_zhong:
 	ldr r0, = 0x40022000   @FLASH访问控制
 	ldr r1, = 0x5a5a0019   @0x5a5a0019
 	str r1, [r0, # 0x04]           @FLASH缓冲 缓冲开启
+
+
+
+
+
 	
 shizhong:	
 	ldr r0, = 0x40010000 @ rcc
@@ -111,6 +116,21 @@ _neicunqinglingxunhuan:
 	str r1, [r0]
 	cmp r0, r2
 	bne _neicunqinglingxunhuan
+__neicun_chushi_hua:
+        ldr r0, = tiaozhibi
+	ldr r1, = 1100
+	str r1, [r0]
+
+	ldr r0, = kaiji_yanshi
+	ldr r1, = 10000
+	str r1, [r0]
+
+
+
+
+
+
+	
 __pa_chu_shi_hua:
 	ldr r0, = 0x48000000 @pa
 	ldr r1, = 0x78ff
@@ -215,11 +235,13 @@ __deng_chu_shi_hua:
 	str r1, [r0, # 0x08]		@开ADC转换
 
 	ldr r4, = 0xe000e010
-	ldr r3, =  4799  @0xffffff @ 4799
+	ldr r3, =  4799 	@0xffffff @ 4799
 	str r3, [r4, # 4]
 	str r3, [r4, # 8]
 	movs r3, # 0x07
 	str r3, [r4]    @systick 开
+
+	
 
 @	bl __atan2_ji_suan
 @	ldr r0, = 0xe000e018
@@ -283,11 +305,6 @@ __spi1_chu_shi_hua:
 
 	
 
-	ldr r0, = tiaozhibi
-	ldr r1, = 1000
-	str r1, [r0]
-
-
 	
 	
 __chuchuang_chushihua:
@@ -323,13 +340,21 @@ __anjian0:
 __anjian1:
 	bkpt # 1
 __anjian2:
-	bl __an_jian
-	cmp r0, # 2
-	beq __anjian_2
-	cmp r0, # 0
-	bne __anjian2
-	bl __xie_flash
-__anjian_2:	
+@	bl __an_jian
+@	cmp r0, # 2
+@	beq __anjian_2
+@	cmp r0, # 0
+@	bne __anjian2
+	@	bl __xie_flash
+	ldr r7, = 0xffff
+__tiaoling_yanshi:
+	movs r0, # 0
+	ldr r4, = 1100
+	bl __svpwm
+	subs r7, r7, # 1
+	bne __tiaoling_yanshi
+__anjian_2:
+	
         ldr r0, = cos_r
         ldr r1, = cos_i
         ldr r0, [r0]
@@ -369,8 +394,17 @@ __anjian_2:
         str r0, [r2]
         str r1, [r3]
 
+	ldr r0, = xuanbian_jiaodu
+	ldr r1, [r0]
+	cmp r1, # 10
+	bhi __anjian_2
+
+	ldr r0, = xuanbian_tiaoling
+	movs r1, # 0
+	str r1, [r0]
+	bl __xie_flash
 	
-	b __anjian2
+@	b __anjian2
 
 	
 __anjian3:
@@ -394,7 +428,22 @@ __an_jian:
 	lsrs r0, r0, # 30
 	bx lr
 
-ting:
+ting:	
+	
+	ldr r0, = xuanbian_tiaoling
+	ldr r1, [r0]
+	cmp r1, # 1
+	beq __tiao_ling
+	b __dd
+__tiao_ling:	
+	bl __anjian2
+
+
+	
+__dd:
+@	b __ren_wu_diao_du
+
+	
 	ldr r0, = xuanbian_jiaodu
 	ldr r4, [r0]
 	movs r4, r4
@@ -558,17 +607,20 @@ _alpha_min_beta_max:
 
 __svpwm:
 	push {r1-r3,lr}
-	@r0=角度 0到12000，0-2000表示0-60度范围
+	@r0=角度 0到11999，0-2000表示0-60度范围
 	@r4, = 调制比
 	mov r2, r0
 	ldr r1, = 2000
-	bl _chufa
-	cmp r0, r1
-	beq __xiangwei_0_60
+	movs r3, # 0
+__jisuan_jiaodu_qujian:
+	adds r3, r3, # 1
+	subs r0, r0, r1
+	bpl __jisuan_jiaodu_qujian
+	subs r3, r3, # 1
 	ldr r1, = dian_ji_xiang_wei
-	lsls r0, r0, # 2
-	ldr r0, [r1, r0]
-	mov pc, r0
+	lsls r3, r3, # 2
+	ldr r3, [r1, r3]
+	mov pc, r3
 	.align 4
 dian_ji_xiang_wei:	
 	.word __xiangwei_0_60 +1		@0-60度
@@ -4771,7 +4823,19 @@ __baocun_jiao_su_du:
 
 
 __systick_fanhui:
-	ldr r2, = 12000
+
+	ldr r0, = sufu_huan_jishu
+	ldr r1, [r0]
+	adds r1, r1, # 1
+	str r1, [r0]
+	cmp r1, # 10
+	bne __qudong_dianji
+	movs r1, # 0
+	str r1, [r0]
+	
+	ldr r3, = 0x20001f24
+	ldr r3, [r3]
+	ldr r2, = 11999
 	ldr r1, = qudong_jiaodu
 	ldr r0, [r1]
 	adds r0, r0, # 1
@@ -4781,11 +4845,67 @@ __systick_fanhui:
 	movs r0, # 0
         str r0, [r1]
 __qudong_dianji:
-	movs r0, # 0
-	ldr r4, = 1100
-	bl __svpwm
+	ldr r1, = xuanbian_tiaoling
+	ldr r1, [r1]
+	cmp r1, # 1
+	beq __systick_fan_hui
+
+	ldr r0, = xuanbian_jiaodu
+	ldr r2, [r0]
+	ldr r1, = 21845
+	muls r2, r2, r1
+	lsrs r2, r2, # 16
+	ldr r1, = 11999
+	subs r1, r1, r2	
+	str r1, [r0]
 
 	
+	ldr r0, = qudong_jiaodu
+	ldr r0, [r0]
+	subs r1, r1, r0
+	bpl __fan_zhuan
+__zheng_zhuan:
+	mvns r1, r1
+	adds r1, r1, r0
+	b __xie_svpwm
+__fan_zhuan:
+	subs r1, r0, r1
+
+
+__xie_svpwm:
+	ldr r0, = 11999
+        movs r1, r1
+        bpl __jiaodu_bushi_fushu
+        adds r1, r1, r0
+__jiaodu_bushi_fushu:
+	cmp r1, r0
+	bcc __jiaodu_budayu_11999
+	subs r1, r1, r0
+__jiaodu_budayu_11999:
+	ldr r0, = kaiji_yanshi
+	ldr r2, [r0]
+	subs r2, r2, # 1
+	str r2, [r0]
+	bne __systick_fan_hui
+	movs r2, # 1
+	str r2, [r0]
+
+
+	ldr r0, = xuanbian_jiaodu
+	str r1, [r0]
+	
+	ldr r4, = 1100
+	ldr r4, = tiaozhibi
+	ldr r4, [r4]
+	ldr r0, = qudong_jiaodu
+	ldr r0, [r0]
+	movs r0, r1
+
+	bl __svpwm
+
+
+	
+__systick_fan_hui:	
 	ldr r0, = 0xe0000d04
 	ldr r1, = 0x02000000
 	str r1, [r0]                 @ 清除SYSTICK中断
@@ -4816,7 +4936,13 @@ __qudong_dianji:
         .equ lvboqizhizhen3,            0x20001800
         .equ lvboqihuanchong3,          0x20001808
 
+	.equ r_0,			0x20001f10
+	.equ r_4,			0x20001f14
+	.equ r_1,			0x20001f18
 	
+	.equ kaiji_yanshi,		0x20001f28
+	.equ sufu_huan_jishu,		0x20001f2c
+	.equ xuanbian_tiaoling,		0x20001f30
 	.equ qudong_jiaodu,		0x20001f34
 	.equ tiaozhibi,			0x20001f38
 	.equ fangxiang,			0x20001f3c
