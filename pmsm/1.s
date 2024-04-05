@@ -473,6 +473,7 @@ __xianshi_z_r:
 	ldr r3, = 0x1105              @lcd位置
 	bl __xie_lcd_ascii
 
+        b __ren_wu_diao_du
 
 
 
@@ -4823,8 +4824,7 @@ __baocun_jiao_su_du:
 
 
 __systick_fanhui:
-
-	ldr r0, = sufu_huan_jishu
+	ldr r0, = sifu_huan_jishu
 	ldr r1, [r0]
 	adds r1, r1, # 1
 	str r1, [r0]
@@ -4833,16 +4833,13 @@ __systick_fanhui:
 	movs r1, # 0
 	str r1, [r0]
 	
-	ldr r3, = 0x20001f24
-	ldr r3, [r3]
 	ldr r2, = 11999
 	ldr r1, = qudong_jiaodu
 	ldr r0, [r1]
-	adds r0, r0, # 1
+	subs r0, r0, # 10
 	str r0, [r1]
-        cmp r0, r2
-        bcc __qudong_dianji
-	movs r0, # 0
+        bpl __qudong_dianji
+	adds r0, r0, r2
         str r0, [r1]
 __qudong_dianji:
 	ldr r1, = xuanbian_tiaoling
@@ -4854,14 +4851,30 @@ __qudong_dianji:
 	ldr r2, [r0]
 	ldr r1, = 21845
 	muls r2, r2, r1
-	lsrs r2, r2, # 16
+	lsrs r2, r2, # 16	@旋转变角度
 	ldr r1, = 11999
 	subs r1, r1, r2	
 	str r1, [r0]
 
+
+        ldr r0, = kaiji_yanshi
+        ldr r3, [r0]
+        cmp r3, # 0
+        beq __tiaoguo_kaiji_yanshi
+	subs r3, r3, # 1
+        str r3, [r0]
+        bne __systick_fan_hui
+	ldr r0, = qudong_jiaodu
+	str r1, [r0]
+__tiaoguo_kaiji_yanshi:
+
+
+
+
 	
 	ldr r0, = qudong_jiaodu
 	ldr r0, [r0]
+
 	subs r1, r1, r0
 	bpl __fan_zhuan
 __zheng_zhuan:
@@ -4881,26 +4894,41 @@ __jiaodu_bushi_fushu:
 	cmp r1, r0
 	bcc __jiaodu_budayu_11999
 	subs r1, r1, r0
-__jiaodu_budayu_11999:
-	ldr r0, = kaiji_yanshi
-	ldr r2, [r0]
-	subs r2, r2, # 1
-	str r2, [r0]
-	bne __systick_fan_hui
-	movs r2, # 1
-	str r2, [r0]
+__jiaodu_budayu_11999:	
 
-
-	ldr r0, = xuanbian_jiaodu
-	str r1, [r0]
-	
 	ldr r4, = 1100
 	ldr r4, = tiaozhibi
 	ldr r4, [r4]
+	ldr r2, = xuanbian_jiaodu
+	ldr r2, [r2]
 	ldr r0, = qudong_jiaodu
 	ldr r0, [r0]
+	subs r0, r0, r2
+	bpl __xie_tiaozhibi
+	mvns r0, r0
+	adds r0, r0, # 1
+__xie_tiaozhibi:
+	ldr r3, = 6000
+	cmp r0, r3
+	bcc __jiaodu_cha_zheng
+	mvns r0, r0
+	adds r0, r0, # 1
+	ldr r2, = 11999
+	adds r0, r0, r2
+__jiaodu_cha_zheng:
+	subs r4, r4, r0
+	bpl __tiaozhibi_zhengchang
+	ldr r4, = 1100
+__tiaozhibi_zhengchang:
+	ldr r2, = 200			@调制比限制
+	cmp r4, r2
+	bcs __tiaozhibi_xiaoyu_xianzhi
+	ldr r4, = 1100
+__tiaozhibi_xiaoyu_xianzhi:	
+	ldr r2, = xuanbian_jiaodu
+	str r4, [r2]
+@	ldr r4, = 1100
 	movs r0, r1
-
 	bl __svpwm
 
 
@@ -4936,12 +4964,9 @@ __systick_fan_hui:
         .equ lvboqizhizhen3,            0x20001800
         .equ lvboqihuanchong3,          0x20001808
 
-	.equ r_0,			0x20001f10
-	.equ r_4,			0x20001f14
-	.equ r_1,			0x20001f18
-	
+	.equ svpwm_kaiguan,		0x20001f24
 	.equ kaiji_yanshi,		0x20001f28
-	.equ sufu_huan_jishu,		0x20001f2c
+	.equ sifu_huan_jishu,		0x20001f2c
 	.equ xuanbian_tiaoling,		0x20001f30
 	.equ qudong_jiaodu,		0x20001f34
 	.equ tiaozhibi,			0x20001f38
