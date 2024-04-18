@@ -1,7 +1,7 @@
 	@cw32f030c8t6
 	@编译器ARM-NONE-EABI
 	@永磁无刷电机控制
-	@yjmwxwx-2024-04-05
+	@yjmwxwx-2024-04-18
 	.thumb
 	.syntax unified
 	.section .text
@@ -229,7 +229,7 @@ __deng_chu_shi_hua:
 	bpl __deng_chu_shi_hua		@等ADC初始化完成
 	movs r1, # 0x80
 	str r1, [r0, # 0x04]		@开DMA和通道选择
-	ldr r1, = 0x10010
+	ldr r1, = 0x20210		@0x10010
 	str r1, [r0, # 0x0c]
 	movs r1, # 0x01
 	str r1, [r0, # 0x08]		@开ADC转换
@@ -444,7 +444,7 @@ __dd:
 @	b __ren_wu_diao_du
 
 	
-	ldr r0, = xuanbian_jiaodu
+	ldr r0, = lcd	@xuanbian_jiaodu
 	ldr r4, [r0]
 	movs r4, r4
 	bpl __xianshi_zr
@@ -486,8 +486,6 @@ __xianshi_z_r:
        lsrs r0, r0, # 13
 
 
-	ldr r0, = xiang_yi
-	ldr r0, [r0]
 	movs r1, # 8
 	ldr r2, = asciibiao
         movs r3, # 5            @小数点位置
@@ -4816,6 +4814,7 @@ __baocun_jiao_sudu:
 	cmp r2, r5
 	bcc __baocun_jiao_su_du
 	subs r2, r4, r2
+	bpl __baocun_jiao_su_du
 	mvns r2, r2
 	adds r2, r2, # 1
 __baocun_jiao_su_du:
@@ -4823,115 +4822,123 @@ __baocun_jiao_su_du:
 	str r0, [r1]
 
 
-__systick_fanhui:
-	ldr r0, = sifu_huan_jishu
-	ldr r1, [r0]
-	adds r1, r1, # 1
-	str r1, [r0]
-	cmp r1, # 10
-	bne __qudong_dianji
-	movs r1, # 0
-	str r1, [r0]
+
+
+	ldr r0, = xuanbian_jiaodu
+	ldr r2, [r0]
+	ldr r6, = 21845
+	muls r2, r2, r6
+        lsrs r2, r2, # 16       @旋转变角度
+        ldr r6, = 11999
+	subs r6, r6, r2
+	str r6, [r0]
+
 	
+__systick_fanhui:
+
+	ldr r0, = kaiji_yanshi
+        ldr r3, [r0]
+	cmp r3, # 0
+        beq __tiaoguo_kaiji_yanshi
+	subs r3, r3, # 1
+        str r3, [r0]
+	bne __systick_fan_hui
+	ldr r0, = qudong_jiaodu
+        str r6, [r0]
+__tiaoguo_kaiji_yanshi:
+
+
+
+	ldr r3, = 0x40012428
+	ldr r3, [r3]
+	ldr r0, = 2000 @1600
+	muls r3, r3, r0
+	lsrs r3, r3, # 15
+
+
+
+
+	
+	ldr r0, = qudong_jiaodu
+	ldr r5, [r0]
+	subs r5, r5, r6
+	bpl __shibu_jiance
+	mvns r5, r5
+	adds r5, r5, # 1
+__shibu_jiance:
+	ldr r4, = 6000
+	cmp r5, r4
+	bcc __shibu_jiance1
+	ldr r4, = 12000
+	subs r5, r4, r5
+__shibu_jiance1:
+	b __dianliu_shezhi
+	ldr r4, = 5000
+	cmp r5, r4
+	bcc __dianliu_shezhi
+	ldr r4, = 200
+	
+	b __qudong_dianji
+
+__dianliu_shezhi:
+	ldr r4, = 5000
+	cmp r5, r4
+	bcc __jisuan_dianliu
+	ldr r0, = 100
+	ldr r2, = tiao_zhi_bi
+	ldr r4, [r2]
+	subs r4, r4, # 100
+	str r4, [r2]
+	bpl __baocun_qudong_dianji
+	mov r4, r0
+	b __qudong_dianji
+__baocun_qudong_dianji:
+	cmp r4, r0
+	bcs __qudong_dianji
+	mov r4, r0
+	b __qudong_dianji
+__jisuan_dianliu:	
+	ldr r4, = 1200
+	@lsrs r5, r5, # 4
+	ldr r0, = 2200
+	muls r5, r5, r0
+	lsrs r5, r5, # 15
+	subs r4, r4, r5
+	bpl __dianliu_bushi_fushu
+	ldr r4, = 50
+	b __qudong_dianji
+__dianliu_bushi_fushu:	
+	ldr r2, = 50
+	cmp r4, r2
+	bcs __qudong_jiaodu_jia
+	ldr r4, = 50
+	b __qudong_dianji
+	
+
+
+	
+__qudong_jiaodu_jia:
+	ldr r2, = tiao_zhi_bi
+	str r4, [r2]
 	ldr r2, = 11999
 	ldr r1, = qudong_jiaodu
 	ldr r0, [r1]
-	subs r0, r0, # 10
+	subs r0, r0, r3 @ # 1
 	str r0, [r1]
         bpl __qudong_dianji
 	adds r0, r0, r2
         str r0, [r1]
 __qudong_dianji:
-	ldr r1, = xuanbian_tiaoling
-	ldr r1, [r1]
-	cmp r1, # 1
-	beq __systick_fan_hui
 
-	ldr r0, = xuanbian_jiaodu
-	ldr r2, [r0]
-	ldr r1, = 21845
-	muls r2, r2, r1
-	lsrs r2, r2, # 16	@旋转变角度
-	ldr r1, = 11999
-	subs r1, r1, r2	
-	str r1, [r0]
-
-
-        ldr r0, = kaiji_yanshi
-        ldr r3, [r0]
-        cmp r3, # 0
-        beq __tiaoguo_kaiji_yanshi
-	subs r3, r3, # 1
-        str r3, [r0]
-        bne __systick_fan_hui
-	ldr r0, = qudong_jiaodu
-	str r1, [r0]
-__tiaoguo_kaiji_yanshi:
-
-
-
-
-	
-	ldr r0, = qudong_jiaodu
-	ldr r0, [r0]
-
-	subs r1, r1, r0
-	bpl __fan_zhuan
-__zheng_zhuan:
-	mvns r1, r1
-	adds r1, r1, r0
-	b __xie_svpwm
-__fan_zhuan:
-	subs r1, r0, r1
-
-
-__xie_svpwm:
-	ldr r0, = 11999
-        movs r1, r1
-        bpl __jiaodu_bushi_fushu
-        adds r1, r1, r0
-__jiaodu_bushi_fushu:
-	cmp r1, r0
-	bcc __jiaodu_budayu_11999
-	subs r1, r1, r0
-__jiaodu_budayu_11999:	
-
-	ldr r4, = 1100
-	ldr r4, = tiaozhibi
-	ldr r4, [r4]
-	ldr r2, = xuanbian_jiaodu
-	ldr r2, [r2]
-	ldr r0, = qudong_jiaodu
-	ldr r0, [r0]
-	subs r0, r0, r2
-	bpl __xie_tiaozhibi
-	mvns r0, r0
-	adds r0, r0, # 1
-__xie_tiaozhibi:
-	ldr r3, = 6000
-	cmp r0, r3
-	bcc __jiaodu_cha_zheng
-	mvns r0, r0
-	adds r0, r0, # 1
-	ldr r2, = 11999
-	adds r0, r0, r2
-__jiaodu_cha_zheng:
-	subs r4, r4, r0
-	bpl __tiaozhibi_zhengchang
-	ldr r4, = 1100
-__tiaozhibi_zhengchang:
-	ldr r2, = 200			@调制比限制
-	cmp r4, r2
-	bcs __tiaozhibi_xiaoyu_xianzhi
-	ldr r4, = 1100
-__tiaozhibi_xiaoyu_xianzhi:	
-	ldr r2, = xuanbian_jiaodu
+	ldr r2, = lcd
 	str r4, [r2]
-@	ldr r4, = 1100
+
+	ldr r0, = qudong_jiaodu
+	ldr r1, [r0]
+@	ldr r4, = tiaozhibi
+@	ldr r4, [r4]
 	movs r0, r1
 	bl __svpwm
-
-
 	
 __systick_fan_hui:	
 	ldr r0, = 0xe0000d04
@@ -4964,6 +4971,8 @@ __systick_fan_hui:
         .equ lvboqizhizhen3,            0x20001800
         .equ lvboqihuanchong3,          0x20001808
 
+	.equ tiao_zhi_bi,		0x20001f1c
+	.equ lcd,			0x20001f20
 	.equ svpwm_kaiguan,		0x20001f24
 	.equ kaiji_yanshi,		0x20001f28
 	.equ sifu_huan_jishu,		0x20001f2c
