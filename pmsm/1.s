@@ -340,20 +340,23 @@ __anjian0:
 __anjian1:
 	bkpt # 1
 __anjian2:
-@	bl __an_jian
-@	cmp r0, # 2
-@	beq __anjian_2
-@	cmp r0, # 0
-@	bne __anjian2
-	@	bl __xie_flash
-	ldr r7, = 0xffff
-__tiaoling_yanshi:
-	movs r0, # 0
-	ldr r4, = 1100
-	bl __svpwm
+	bl __an_jian
+	cmp r0, # 2
+	beq __jinru_anjian2
+	cmp r0, # 0
+	bne __anjian2
+
+__jinru_anjian2:	
+	ldr r7, = 0x3ffff
+__xuanzhuan_daoling:
+	ldr r0, = xuanbian_tiaoling
+	movs r1, # 1
+	str r1, [r0]
 	subs r7, r7, # 1
-	bne __tiaoling_yanshi
-__anjian_2:
+	bne __xuanzhuan_daoling
+	
+__anjian_2:	
+	
 	
         ldr r0, = cos_r
         ldr r1, = cos_i
@@ -430,21 +433,8 @@ __an_jian:
 
 ting:	
 	
-	ldr r0, = xuanbian_tiaoling
-	ldr r1, [r0]
-	cmp r1, # 1
-	beq __tiao_ling
-	b __dd
-__tiao_ling:	
-	bl __anjian2
-
-
 	
-__dd:
-@	b __ren_wu_diao_du
-
-	
-	ldr r0, = lcd	@xuanbian_jiaodu
+	ldr r0, = xuanbian_jiaodu	@lcd	@xuanbian_jiaodu
 	ldr r4, [r0]
 	movs r4, r4
 	bpl __xianshi_zr
@@ -4829,11 +4819,22 @@ __baocun_jiao_su_du:
 	ldr r6, = 21845
 	muls r2, r2, r6
         lsrs r2, r2, # 16       @旋转变角度
-        ldr r6, = 11999
-	subs r6, r6, r2
+ @       ldr r6, = 11999
+	@	subs r6, r6, r2
+
+	mov r6, r2
 	str r6, [r0]
 
-	
+
+
+	ldr r0, = xuanbian_tiaoling
+	ldr r1, [r0]
+	cmp r1, # 1
+	bne __systick_fanhui
+	movs r0, # 0
+	ldr r4, = 1100
+	bl __svpwm
+	b __systick_fan_hui
 __systick_fanhui:
 
 	ldr r0, = kaiji_yanshi
@@ -4854,10 +4855,6 @@ __tiaoguo_kaiji_yanshi:
 	ldr r0, = 2000 @1600
 	muls r3, r3, r0
 	lsrs r3, r3, # 15
-
-
-
-
 	
 	ldr r0, = qudong_jiaodu
 	ldr r5, [r0]
@@ -4935,8 +4932,6 @@ __qudong_dianji:
 
 	ldr r0, = qudong_jiaodu
 	ldr r1, [r0]
-@	ldr r4, = tiaozhibi
-@	ldr r4, [r4]
 	movs r0, r1
 	bl __svpwm
 	
@@ -4971,6 +4966,7 @@ __systick_fan_hui:
         .equ lvboqizhizhen3,            0x20001800
         .equ lvboqihuanchong3,          0x20001808
 
+	.equ qudong_jiaodu1,		0x20001f18
 	.equ tiao_zhi_bi,		0x20001f1c
 	.equ lcd,			0x20001f20
 	.equ svpwm_kaiguan,		0x20001f24
