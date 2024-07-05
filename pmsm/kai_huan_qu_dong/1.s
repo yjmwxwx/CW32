@@ -377,7 +377,7 @@ __anjian3:
 	bne __anjian3
 
 __jinru_anjian3:	
-	ldr r7, = 0x5ffff
+	ldr r7, = 0x3ffff
 __xuanzhuan_daoling:
 	ldr r0, = xuanbian_tiaoling
 	movs r1, # 1
@@ -723,7 +723,7 @@ __xiangwei_0_60:
 	ldrh r0, [r1, r2] 	@查表取出 x
 	adds r2, r2, # 2	@偏移16位
 	ldrh r1, [r1, r2] 	@查表取出y
-	ldr r2, = 1200		@PWM计数一半
+	ldr r2, = 2048		@1800		@
 	subs r2, r2, r4
 	muls r0, r0, r2		@ X乘定时器一半值得到U3矢量
 	muls r1, r1, r2		@ Y乘定时器一半值得到U1矢量
@@ -759,7 +759,7 @@ __xiangwei_60_120:
         ldrh r0, [r1, r2]       @查表取出 x
         adds r2, r2, # 2        @偏移16位
         ldrh r1, [r1, r2]       @查表取出y
-        ldr r2, = 1200           @PWM计数一半
+        ldr r2, = 2048		@1800
 	subs r2, r2, r4
         muls r0, r0, r2         @ X乘定时器一半值得到U3矢量
         muls r1, r1, r2         @ Y乘定时器一半值得到U1矢量
@@ -793,7 +793,7 @@ __xiangwei_120_180:
         ldrh r0, [r1, r2]      
         adds r2, r2, # 2       
         ldrh r1, [r1, r2]      
-        ldr r2, = 1200
+        ldr r2, = 2048		@1800
         subs r2, r2, r4
         muls r0, r0, r2        
         muls r1, r1, r2        
@@ -831,7 +831,7 @@ __xiangwei_180_240:
         ldrh r0, [r1, r2]      
         adds r2, r2, # 2       
         ldrh r1, [r1, r2]      
-        ldr r2, = 1200
+        ldr r2, = 2048		@1800
         subs r2, r2, r4
         muls r0, r0, r2        
         muls r1, r1, r2        
@@ -870,7 +870,7 @@ __xiangwei_240_300:
 	ldrh r0, [r1, r2]   
         adds r2, r2, # 2    
 	ldrh r1, [r1, r2]   
-	ldr r2, = 1200
+	ldr r2, = 2048				@1800
 	subs r2, r2, r4
         muls r0, r0, r2
         muls r1, r1, r2       
@@ -912,7 +912,7 @@ __xiangwei_300_360:
         ldrh r0, [r1, r2]    
         adds r2, r2, # 2     
         ldrh r1, [r1, r2]    
-        ldr r2, = 1200
+        ldr r2, = 2048		@1800
 	subs r2, r2, r4
         muls r0, r0, r2      
         muls r1, r1, r2      
@@ -4965,7 +4965,7 @@ __tiaoguo_kaiji_yanshi:
         cmp r1, # 1
         bne __tiaoguo_xuanbian_tiaoling
         movs r0, # 0
-        ldr r4, = 1100
+        ldr r4, = 1900
         bl __svpwm
         b __systick_fan_hui
 __tiaoguo_xuanbian_tiaoling:
@@ -5012,18 +5012,43 @@ __tiaoguo_xuanbian_tiaoling:
 	
 	
 __dianji_zhengfan_zhuan_kongzhi:
-@	ldr r0, = zheng_fan_zhuan
-@	str r3, [r0]
+	ldr r3, = zheng_fan_zhuan
+	ldr r3, [r3]
+
+        ldr r1, = jiao_sudu
+        ldr r1, [r1]
+        movs r1, r1
+        bpl __jiaodu_zhuanhuan
+        mvns r1, r1
+        adds r1, r1, # 1
+__jiaodu_zhuanhuan:
+        ldr r0, = 21845
+        muls r1, r1, r0
+        lsrs r1, r1, # 16       @旋转变角度
 
 
+        ldr r0, = 11999                 @360度
+@        ldr r1, = 3000                  @90度
+        cmp r3, # 0
+        beq __dian_ji_zheng_zhuan1
+__dian_ji_fan_zhuan1:
+        adds r6, r6, r1
+        cmp r6, r0
+        bcc __tiqian_90_du
+        subs r6, r6, r0
+        b __tiqian_90_du
+__dian_ji_zheng_zhuan1:
+        subs r6, r6, r1
+        bpl __tiqian_90_du
+        adds r6, r6, r0
+__tiqian_90_du:
 
+	
 
 	
 	@r3=0正转（旋变角度+）
 	@R3=1反转（旋变角度-）
-	ldr r3, = zheng_fan_zhuan
 	ldr r0, = 11999			@360度		
-	ldr r3, [r3]
 	ldr r1, = 3000			@90度
 	cmp r3, # 0
 	beq __dian_ji_zheng_zhuan
@@ -5042,12 +5067,17 @@ __baocun_kaiji_jiaodu:
 
 	mov r0, r6
         ldr r3, = 0x40012428
-	ldr r3, [r3]
-        ldr r1, = 9600 @1600
-        muls r3, r3, r1
-        lsrs r3, r3, # 15
-	ldr r4, = 1200
+	ldrh r3, [r3]
+	lsrs r3, r3, # 1
+	
+   @     ldr r1, = 14400
+  @      muls r3, r3, r1
+ @       lsrs r3, r3, # 15
+	ldr r4, = 2048		@1800
 	subs r4, r4, r3
+	bpl __xieru_svpwm
+	movs r4, # 0
+__xieru_svpwm:	
         bl __svpwm
         b __systick_fan_hui
 
