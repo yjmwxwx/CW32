@@ -527,26 +527,20 @@ __shui_fen_jiao_zhun:				@sfjz
         ldr r2, = liangshi_pin_zhong    @粮食品种
         ldr r2, [r2]
         ldr r1, = yumi_jiaozhun		@水分校准表
-        lsls r2, r2, # 2
-        ldr r3, [r1, r2]
+       	lsls r2, r2, # 2
+	ldr r3, [r1, r2]
 
         adds r0, r0, r3
-
-        mov r7, r3
-        ldr r1, = 50397
+        ldr r1, = 10
+        bl __chu_fa
+	mov r7, r0
+	ldr r1, = 38174
         muls r0, r0, r1
         asrs r0, r0, # 15
 
-        ldr r1, = 187072
-        muls r0, r0, r1
-        asrs r0, r0, # 15
-
-        ldr r1, = 9137
+	ldr r1, = 168
         subs r0, r0, r1
 
-        ldr r1, = 100
-        bl __chu_fa
-        movs r0, r0
 	bpl __LCD_xian_shi_shui_fen1
 	movs r0, # 0
 __LCD_xian_shi_shui_fen1:
@@ -887,6 +881,7 @@ ting:
 	ldr r0, [r0]
 	ldr r1, [r1]
 	subs r0, r0, r1
+
 	
         ldr r2, = liangshi_pin_zhong    @粮食品种
         ldr r2, [r2]
@@ -895,22 +890,16 @@ ting:
         ldr r3, [r1, r2]
 
 	adds r0, r0, r3
-
+	ldr r1, = 10
+	bl __chu_fa
 	mov r7, r0
-	ldr r1, = 50397
+	ldr r1, = 38174
 	muls r0, r0, r1
 	asrs r0, r0, # 15
 
-	ldr r1, = 187072
-	muls r0, r0, r1
-	asrs r0, r0, # 15
-
-	ldr r1, = 9137
+	ldr r1, = 168
 	subs r0, r0, r1
 	
-	ldr r1, = 100
-	bl __chu_fa
-	movs r0, r0
 	bpl __LCD_xian_shi_shui_fen
 	movs r0, # 0
 __LCD_xian_shi_shui_fen:	
