@@ -1,0 +1,129 @@
+ARM GAS  1.s 			page 1
+
+
+   1              		@cw32L010
+   2              		@编译器ARM-NONE-EABI
+   3              	
+   4              		.thumb
+   5              		.syntax unified
+   6              		.section .text
+   7              	vectors:
+   8 0000 00010020 		.word zhanding
+   9 0004 C1000000 		.word kaishi + 1
+  10 0008 E7000000 		.word _nmi	+1
+  11 000c E7000000 		.word _Hard_Fault +1
+  12 0010 00000000 		.word 0
+  13 0014 00000000 		.word 0
+  14 0018 00000000 		.word 0
+  15 001c 00000000 		.word 0
+  16 0020 00000000 		.word 0
+  17 0024 00000000 		.word 0
+  18 0028 00000000 		.word 0
+  19 002c E7000000 		.word _svc_handler +1
+  20 0030 00000000 		.word 0
+  21 0034 00000000 		.word 0
+  22 0038 E7000000 		.word _pendsv_handler +1
+  23 003c E7000000 		.word _systickzhongduan +1  @ 15
+  24 0040 E7000000 		.word aaa +1                @ 0		WDT
+  25 0044 E7000000 		.word aaa +1                @ 1		LVD
+  26 0048 E7000000 		.word aaa +1                @ 2	
+  27 004c E7000000 		.word aaa +1                @ 3		FLASHRAM
+  28 0050 E7000000 		.word aaa +1                @ 4		RCC
+  29 0054 E7000000 		.word aaa +1         	    @ 5		GPIOA
+  30 0058 E7000000 		.word aaa +1                @ 6		GPIOB
+  31 005c E7000000 		.word aaa +1                @ 7		GPIOC
+  32 0060 E7000000 		.word aaa +1                @ 8
+  33 0064 E7000000 		.word aaa +1                @ 9
+  34 0068 E7000000 		.word aaa +1                @ 10
+  35 006c E7000000 		.word aaa +1                @ 11
+  36 0070 E7000000 		.word aaa +1                @ 12	ADC
+  37 0074 E7000000 		.word aaa +1                @ 13	ATIM
+  38 0078 E7000000 		.word aaa +1                @ 14	VC1
+  39 007c E7000000 		.word aaa +1                @ 15	VC2
+  40 0080 E7000000 		.word aaa +1                @ 16	GTIM
+  41 0084 E7000000 		.word aaa +1                @ 17
+  42 0088 E7000000 		.word aaa +1                @ 18
+  43 008c E7000000 		.word aaa +1                @ 19
+  44 0090 E7000000 		.word aaa +1                @ 20	BTIM1
+  45 0094 E7000000 		.word aaa +1                @ 21	BTIM2
+  46 0098 E7000000 		.word aaa +1                @ 22	BTIM3
+  47 009c E7000000 		.word aaa +1                @ 23	I2C
+  48 00a0 E7000000 		.word aaa +1                @ 24
+  49 00a4 E7000000 		.word aaa +1                @ 25	SPI
+  50 00a8 E7000000 		.word aaa +1                @ 26
+  51 00ac E7000000 		.word aaa +1                @ 27	UART1
+  52 00b0 E7000000 		.word aaa +1		    @ 28	UART2
+  53 00b4 E7000000 		.word aaa +1		    @ 29
+  54 00b8 E7000000 		.word aaa +1		    @ 30	AWT
+  55 00bc E7000000 	 	.word aaa +1		    @ 31
+  56              	kaishi:
+  57              	__shi_zhong:
+ARM GAS  1.s 			page 2
+
+
+  58 00c0 0948     		ldr r0, = 0x40004000
+  59 00c2 0A49     		ldr r1, =  0x5a5a0020
+  60 00c4 0163     		str r1, [r0, # 0x30]	@开pb时钟
+  61              	
+  62              	__pb_chu_shi_hua:
+  63 00c6 0A48     		ldr r0, = 0x48000100 @pb
+  64 00c8 BF21     		movs r1, #  0xbf
+  65 00ca 0180     		strh r1, [r0]
+  66 00cc 3F21     		movs r1, # 0x3f
+  67 00ce C161     		str r1, [r0, # 0x1c]
+  68              		
+  69              	xun_huan:
+  70              	__led_kai_guan:
+  71 00d0 0748     		ldr r0, = 0x48000100	@pb
+  72 00d2 0849     		ldr r1, = 0x40	@
+  73 00d4 0166     		str r1, [r0, # 0x60]		@LED开
+  74              		
+  75 00d6 084A     		ldr r2, = 0xfffff
+  76              	__led_kai_yan_shi:
+  77 00d8 013A     		subs r2, r2, # 1
+  78 00da FDD1     		bne __led_kai_yan_shi
+  79              		
+  80 00dc 0166     		str r1, [r0, # 0x60]		@led关
+  81              		
+  82 00de 064A     		ldr r2, = 0xfffff		@延时时间
+  83              	__led_guan_yan_shi:
+  84 00e0 013A     		subs r2, r2, # 1
+  85 00e2 FDD1     		bne __led_guan_yan_shi
+  86              		
+  87 00e4 F4E7     		b xun_huan
+  88              	
+  89              	_nmi:
+  90              	_Hard_Fault:
+  91              	_svc_handler:
+  92              	_pendsv_handler:	
+  93              	_systickzhongduan:
+  94              	aaa:
+  95 00e6 7047     		bx lr
+  96              		
+  97              		.section .data
+  98              		.equ zhanding,	0x20000100
+  99              		
+ARM GAS  1.s 			page 3
+
+
+DEFINED SYMBOLS
+                 1.s:7      .text:00000000 vectors
+                            *ABS*:20000100 zhanding
+                 1.s:56     .text:000000c0 kaishi
+                 1.s:89     .text:000000e6 _nmi
+                 1.s:90     .text:000000e6 _Hard_Fault
+                 1.s:91     .text:000000e6 _svc_handler
+                 1.s:92     .text:000000e6 _pendsv_handler
+                 1.s:93     .text:000000e6 _systickzhongduan
+                 1.s:94     .text:000000e6 aaa
+                 1.s:57     .text:000000c0 __shi_zhong
+                            .text:00000000 $d
+                 1.s:58     .text:000000c0 $t
+                 1.s:62     .text:000000c6 __pb_chu_shi_hua
+                 1.s:69     .text:000000d0 xun_huan
+                 1.s:70     .text:000000d0 __led_kai_guan
+                 1.s:76     .text:000000d8 __led_kai_yan_shi
+                 1.s:83     .text:000000e0 __led_guan_yan_shi
+                 1.s:99     .text:000000e8 $d
+
+NO UNDEFINED SYMBOLS

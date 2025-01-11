@@ -1,0 +1,207 @@
+ARM GAS  1.s 			page 1
+
+
+   1              		@cw32L010
+   2              		@编译器ARM-NONE-EABI
+   3              	
+   4              		.thumb
+   5              		.syntax unified
+   6              		.section .text
+   7              	vectors:
+   8 0000 00010020 		.word zhanding
+   9 0004 C1000000 		.word kaishi + 1
+  10 0008 41010000 		.word _nmi	+1
+  11 000c 41010000 		.word _Hard_Fault +1
+  12 0010 00000000 		.word 0
+  13 0014 00000000 		.word 0
+  14 0018 00000000 		.word 0
+  15 001c 00000000 		.word 0
+  16 0020 00000000 		.word 0
+  17 0024 00000000 		.word 0
+  18 0028 00000000 		.word 0
+  19 002c 41010000 		.word _svc_handler +1
+  20 0030 00000000 		.word 0
+  21 0034 00000000 		.word 0
+  22 0038 41010000 		.word _pendsv_handler +1
+  23 003c 41010000 		.word _systickzhongduan +1  @ 15
+  24 0040 41010000 		.word aaa +1                @ 0		WDT
+  25 0044 41010000 		.word aaa +1                @ 1		LVD
+  26 0048 41010000 		.word aaa +1                @ 2	
+  27 004c 41010000 		.word aaa +1                @ 3		FLASHRAM
+  28 0050 41010000 		.word aaa +1                @ 4		RCC
+  29 0054 41010000 		.word aaa +1         	    @ 5		GPIOA
+  30 0058 41010000 		.word aaa +1                @ 6		GPIOB
+  31 005c 41010000 		.word aaa +1                @ 7		GPIOC
+  32 0060 41010000 		.word aaa +1                @ 8
+  33 0064 41010000 		.word aaa +1                @ 9
+  34 0068 41010000 		.word aaa +1                @ 10
+  35 006c 41010000 		.word aaa +1                @ 11
+  36 0070 41010000 		.word aaa +1                @ 12	ADC
+  37 0074 41010000 		.word aaa +1                @ 13	ATIM
+  38 0078 41010000 		.word aaa +1                @ 14	VC1
+  39 007c 41010000 		.word aaa +1                @ 15	VC2
+  40 0080 41010000 		.word aaa +1                @ 16	GTIM
+  41 0084 41010000 		.word aaa +1                @ 17
+  42 0088 41010000 		.word aaa +1                @ 18
+  43 008c 41010000 		.word aaa +1                @ 19
+  44 0090 41010000 		.word aaa +1                @ 20	BTIM1
+  45 0094 41010000 		.word aaa +1                @ 21	BTIM2
+  46 0098 41010000 		.word aaa +1                @ 22	BTIM3
+  47 009c 41010000 		.word aaa +1                @ 23	I2C
+  48 00a0 41010000 		.word aaa +1                @ 24
+  49 00a4 41010000 		.word aaa +1                @ 25	SPI
+  50 00a8 41010000 		.word aaa +1                @ 26
+  51 00ac 41010000 		.word aaa +1                @ 27	UART1
+  52 00b0 41010000 		.word aaa +1		    @ 28	UART2
+  53 00b4 41010000 		.word aaa +1		    @ 29
+  54 00b8 41010000 		.word aaa +1		    @ 30	AWT
+  55 00bc 41010000 	 	.word aaa +1		    @ 31
+  56              	kaishi:
+  57              	@	bkpt # 1
+ARM GAS  1.s 			page 2
+
+
+  58              	
+  59              	
+  60              	__shi_zhong:
+  61 00c0 2048     		ldr r0, = 0x40004000
+  62 00c2 2149     		ldr r1, = 0x240022	
+  63 00c4 C161     		str r1, [r0, # 0x1c]	@SYSCTRL_HSE
+  64 00c6 2149     		ldr r1, = 0x5a5a0003	@开HES
+  65 00c8 4160     		str r1, [r0, # 0x04]
+  66              	deng_hse:
+  67 00ca C169     		ldr r1, [r0, # 0x1c]
+  68 00cc 0903     		lsls r1, r1, # 12
+  69 00ce FCD5     		bpl deng_hse
+  70 00d0 1F49     		ldr r1, = 0x5a5a0001
+  71 00d2 0160     		str r1, [r0]		@切换到HSE时钟
+  72 00d4 1F49     		ldr r1, = 0x5a5a0002
+  73 00d6 4160     		str r1, [r0, # 0x04]	@关闭HSI时钟
+  74              		
+  75 00d8 1F49     		ldr r1, =  0x5a5a0030
+  76 00da 0163     		str r1, [r0, # 0x30]	@开pa pb时钟
+  77 00dc 1F49     		ldr r1, = 0x5a5a0060
+  78 00de 8163     		str r1, [r0, # 0x38]	@开ATIM GTIM
+  79              	
+  80              	
+  81              	
+  82              	__pa_chu_shi_hua:
+  83 00e0 1F48     	        ldr r0, = 0x48000000 @pa
+  84 00e2 2049     	        ldr r1, = 0x1e7
+  85 00e4 0160     	        str r1, [r0]		@GPIOx_DIR GPIO 输入输出方向寄存器
+  86 00e6 1F49     	        ldr r1, = 0x1e7
+  87 00e8 C161     	        str r1, [r0, # 0x1c]	@GPIOx_ANALOG GPIO 模拟数字配置寄存器
+  88 00ea 1021     		movs r1, # 0x10		@pa4开漏
+  89 00ec 4160     		str r1, [r0, # 0x04]	@GPIOx_OPENDRAIN GPIO 输出模式寄存器
+  90              		
+  91 00ee 4161     	        str r1, [r0, # 0x14]    @8-15
+  92 00f0 1D49     	        ldr r1, = 0x67000       @pa3=ATIM_CH3 PA4=GTIM_CH3
+  93 00f2 8161     	        str r1, [r0, # 0x18]    @0-7
+  94              	
+  95              	__pb_chu_shi_hua:
+  96 00f4 1D48     	        ldr r0, = 0x48000100 @pb
+  97 00f6 BF21     	        movs r1, #  0xbf
+  98 00f8 0160     	        str r1, [r0]
+  99 00fa 3F21     	        movs r1, # 0x3f
+ 100 00fc C161     	        str r1, [r0, # 0x1c]
+ 101              	
+ 102 00fe 4161     		str r1, [r0, # 0x14]    @8-15
+ 103 0100 8161     	        str r1, [r0, # 0x18]    @0-7
+ 104              	
+ 105              	
+ 106              	
+ 107              	
+ 108              	
+ 109              	
+ 110              	
+ 111              	
+ 112              	
+ 113              	
+ 114              		
+ARM GAS  1.s 			page 3
+
+
+ 115              		
+ 116              	__ATIM_chu_shi_hua:
+ 117 0102 1B48     		ldr r0, = 0x40001400	@ATIM
+ 118 0104 3021     		movs r1, # 0x30		@翻转模式
+ 119 0106 C161     		str r1, [r0, # 0x1c]	@ATIM_CCMR2CMP 比较模式寄存器 1
+ 120 0108 1A49     		ldr r1, = 0x100
+ 121 010a 0162     		str r1, [r0, # 0x20]	@开ATIM_CH3
+ 122 010c 1A49     		ldr r1, = 0x8000	@MOE=1
+ 123 010e 4164     		str r1, [r0, # 0x44]
+ 124 0110 1721     		movs r1, # 23		
+ 125 0112 C162     		str r1, [r0, # 0x2c]	@ATIM_ARR 自动重载寄存器
+ 126 0114 0121     		movs r1, # 0x01
+ 127 0116 0160     		str r1, [r0]		@开定时器
+ 128              	__GTIM_chu_shi_hua:
+ 129 0118 1848     	        ldr r0, = 0x40001800    @GTIM
+ 130 011a 3021     	        movs r1, # 0x30         @翻转模式
+ 131 011c C161     		str r1, [r0, # 0x1c]    @GTIM_CCMR2CMP 比较模式寄存器 1
+ 132 011e 1549     	        ldr r1, = 0x100
+ 133 0120 0162     		str r1, [r0, # 0x20]    @开GTIM_CH3
+ 134 0122 1749     	        ldr r1, =  4799
+ 135 0124 C162     		str r1, [r0, # 0x2c]    @GTIM_ARR 自动重载寄存器
+ 136 0126 0121     	        movs r1, # 0x01
+ 137 0128 0160     		str r1, [r0]            @开定时器
+ 138              	
+ 139              	xun_huan:
+ 140              	__led_kai_guan:
+ 141 012a 1048     		ldr r0, = 0x48000100	@pb
+ 142 012c 1549     		ldr r1, = 0x40	@
+ 143 012e 0166     		str r1, [r0, # 0x60]		@LED开
+ 144              		
+ 145 0130 154A     		ldr r2, = 0xfffff
+ 146              	__led_kai_yan_shi:
+ 147 0132 013A     		subs r2, r2, # 1
+ 148 0134 FDD1     		bne __led_kai_yan_shi
+ 149              		
+ 150 0136 0166     		str r1, [r0, # 0x60]		@led关
+ 151              		
+ 152 0138 134A     		ldr r2, = 0xfffff		@延时时间
+ 153              	__led_guan_yan_shi:
+ 154 013a 013A     		subs r2, r2, # 1
+ 155 013c FDD1     		bne __led_guan_yan_shi
+ 156              		
+ 157 013e F4E7     		b xun_huan
+ 158              	
+ 159              	_nmi:
+ 160              	_Hard_Fault:
+ 161              	_svc_handler:
+ 162              	_pendsv_handler:	
+ 163              	_systickzhongduan:
+ 164              	aaa:
+ 165 0140 7047     		bx lr
+ 166              		
+ 167 0142 0000     		.section .data
+ 168              		.equ zhanding,	0x20000100
+ 169              		
+ARM GAS  1.s 			page 4
+
+
+DEFINED SYMBOLS
+                 1.s:7      .text:00000000 vectors
+                            *ABS*:20000100 zhanding
+                 1.s:56     .text:000000c0 kaishi
+                 1.s:159    .text:00000140 _nmi
+                 1.s:160    .text:00000140 _Hard_Fault
+                 1.s:161    .text:00000140 _svc_handler
+                 1.s:162    .text:00000140 _pendsv_handler
+                 1.s:163    .text:00000140 _systickzhongduan
+                 1.s:164    .text:00000140 aaa
+                 1.s:60     .text:000000c0 __shi_zhong
+                            .text:00000000 $d
+                 1.s:61     .text:000000c0 $t
+                 1.s:66     .text:000000ca deng_hse
+                 1.s:82     .text:000000e0 __pa_chu_shi_hua
+                 1.s:95     .text:000000f4 __pb_chu_shi_hua
+                 1.s:116    .text:00000102 __ATIM_chu_shi_hua
+                 1.s:128    .text:00000118 __GTIM_chu_shi_hua
+                 1.s:139    .text:0000012a xun_huan
+                 1.s:140    .text:0000012a __led_kai_guan
+                 1.s:146    .text:00000132 __led_kai_yan_shi
+                 1.s:153    .text:0000013a __led_guan_yan_shi
+                 1.s:167    .text:00000142 $d
+                 1.s:169    .text:00000144 $d
+
+NO UNDEFINED SYMBOLS
