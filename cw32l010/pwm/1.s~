@@ -105,18 +105,35 @@ __pb_chu_shi_hua:
 
 
 
-__GTIM_chu_shi_hua:
-        ldr r0, = 0x40001800    @GTIM
-        movs r1, # 0x30         @翻转模式
-	str r1, [r0, # 0x18]    @GTIM_CCMR1CMP 比较模式寄存器 1
-        ldr r1, = 0x01
-	str r1, [r0, # 0x20]    @开GTIM_CH1
-        ldr r1, =  47999	
-	str r1, [r0, # 0x2c]    @GTIM_ARR 自动重载寄存器
-	movs r1, # 0x70		@OC1REF 信号用作触发输出 (TRGO)
-	str r1, [r0, # 0x04]
-	movs r1, # 0x01
-	str r1, [r0]            @开定时器
+	
+
+@__GTIM_chu_shi_hua:
+ @       ldr r0, = 0x40001800    @GTIM
+@        movs r1, # 0x30         @翻转模式
+@	str r1, [r0, # 0x18]    @GTIM_CCMR1CMP 比较模式寄存器 1
+ @       ldr r1, = 0x01
+@	str r1, [r0, # 0x20]    @开GTIM_CH1
+ @       ldr r1, =  47999	
+@	str r1, [r0, # 0x2c]    @GTIM_ARR 自动重载寄存器
+@	movs r1, # 0x70		@OC1REF 信号用作触发输出 (TRGO)
+@	str r1, [r0, # 0x04]
+@	movs r1, # 0x01
+@	str r1, [r0]            @开定时器
+
+
+
+__adc_chu_shi_hua:
+        ldr r0, = 0x40000000
+        movs r1, # 0x09
+        str r1, [r0]                    @开ADC
+        movs r1, # 0x02			@通道2
+        str r1, [r0, # 0x2c]            @通道选择
+        movs r1, # 0x01
+        str r1, [r0, # 0x08]            @开ADC转换
+
+
+
+
 	
 	
 __ATIM_chu_shi_hua:
@@ -127,7 +144,7 @@ __ATIM_chu_shi_hua:
 	str r1, [r0, # 0x20]	@开ATIM_CH1
 	ldr r1, = 0x8000	@MOE=1
 	str r1, [r0, # 0x44]
-	ldr r1, =  154		@52		
+	movs r1, # 154		
 	str r1, [r0, # 0x2c]	@ATIM_ARR 自动重载寄存器
 @	movs r1, # 0x25
 @	str r1, [r0, # 0x08]	@门控模式
@@ -156,6 +173,8 @@ __spi_chu_shi_hua_ST7735S:
 	ldr r2, = 999
 	movs r1, # 0
 ting:
+	b ting
+	
 	mov r0, r1
 	bl __xianshi_shuzi
 	adds r1, r1, # 1

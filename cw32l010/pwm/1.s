@@ -33,7 +33,7 @@ vectors:
 	.word aaa +1                @ 9
 	.word aaa +1                @ 10
 	.word aaa +1                @ 11
-	.word aaa +1                @ 12	ADC
+	.word __adc_zhongduan +1    @ 12	ADC
 	.word aaa +1                @ 13	ATIM
 	.word aaa +1                @ 14	VC1
 	.word aaa +1                @ 15	VC2
@@ -81,6 +81,25 @@ deng_hse:
 	str r1, [r0, # 0x08]	@PB07 作为 GPIO 端口
 
 
+_neicunqingling:
+	ldr r0, = 0x20001000
+	ldr r2, = 0x20000000
+	movs r1, # 0
+_neicunqinglingxunhuan:
+	subs r0, r0, # 4
+	str r1, [r0]
+	cmp r0, r2
+	bne _neicunqinglingxunhuan
+
+	ldr r0, = adc_jishu
+	movs r1, # 0
+	subs r1, r1, # 2
+	str r1, [r0]
+
+
+
+	
+
 __pa_chu_shi_hua:
         ldr r0, = 0x48000000 @pa
         ldr r1, = 0x187
@@ -94,29 +113,68 @@ __pa_chu_shi_hua:
 
 __pb_chu_shi_hua:
         ldr r0, = 0x48000100 @pb
-        movs r1, #  0x8c
+        movs r1, #  0x84
         str r1, [r0]
-        movs r1, # 0X0C
+        movs r1, # 0X04
         str r1, [r0, # 0x1c]
 
 	str r1, [r0, # 0x14]    @8-15
-	movs r1, # 0x07		@PB0=ATIM_CH1
+	ldr r1, = 0x6007	@PB0=ATIM_CH1
         str r1, [r0, # 0x18]    @0-7
 
+__wai_she_zhong_duan:
+	ldr r0, = 0xe000e100
+	ldr r1, = 0x1000
+	str r1, [r0]
+	
 
+	
 
 __GTIM_chu_shi_hua:
         ldr r0, = 0x40001800    @GTIM
         movs r1, # 0x30         @翻转模式
 	str r1, [r0, # 0x18]    @GTIM_CCMR1CMP 比较模式寄存器 1
-        ldr r1, = 0x01
+
+	ldr r1, = 0x6000	@PWM模式1
+	str r1, [r0, # 0x1c]	@GTIM_CCR2CMP
+	ldr r1, = 4773
+	lsrs r1, r1, # 1
+	str r1, [r0, # 0x40]
+
+	
+        ldr r1, = 0x1001
 	str r1, [r0, # 0x20]    @开GTIM_CH1
-        ldr r1, =  47999	
+        ldr r1, =  4773		@采样率5027.230833682
+		
 	str r1, [r0, # 0x2c]    @GTIM_ARR 自动重载寄存器
 	movs r1, # 0x70		@OC1REF 信号用作触发输出 (TRGO)
 	str r1, [r0, # 0x04]
 	movs r1, # 0x01
 	str r1, [r0]            @开定时器
+
+        ldr r0, = lvbo_changdu
+        ldr r1, = lvbo_youyi
+        ldr r2, =  198
+        str r2, [r0]
+        movs r2, # 4
+        str r2, [r1]
+
+
+
+	
+	
+__adc_chu_shi_hua:
+        ldr r0, = 0x40000000
+        movs r1, #  0x01
+        str r1, [r0]                    @开ADC
+        movs r1, # 0x02			@通道2
+        str r1, [r0, # 0x2c]            @通道选择
+	ldr r1, = 0x200
+	str r1, [r0, # 0x18]		@触发源选择
+        movs r1, # 0x01
+	str r1, [r0, # 0x74]		@开中断
+@       str r1, [r0, # 0x08]            @开ADC转换
+
 	
 	
 __ATIM_chu_shi_hua:
@@ -127,7 +185,7 @@ __ATIM_chu_shi_hua:
 	str r1, [r0, # 0x20]	@开ATIM_CH1
 	ldr r1, = 0x8000	@MOE=1
 	str r1, [r0, # 0x44]
-	ldr r1, =  154		@52		
+	ldr r1, = 153		
 	str r1, [r0, # 0x2c]	@ATIM_ARR 自动重载寄存器
 @	movs r1, # 0x25
 @	str r1, [r0, # 0x08]	@门控模式
@@ -152,10 +210,20 @@ __spi_chu_shi_hua_ST7735S:
 	
 	bl __lcd_chushihua
 	bl __lcd_qingping
+
+
+
+
+
+
+
 	
 	ldr r2, = 999
 	movs r1, # 0
 ting:
+	
+	b ting
+	
 	mov r0, r1
 	bl __xianshi_shuzi
 	adds r1, r1, # 1
@@ -164,6 +232,94 @@ ting:
         ldr r0, = 0x48000100 @PB
 	movs r1, # 0x02
 	str r1, [r0, # 0x5c]    @lcd_cs=0
+
+
+
+
+
+
+	
+__lv_bo_qi:
+	@地址顺序：指针，累加值，缓冲区
+	@入口R0=缓冲区，R1=数据, r2,=指针
+	@出口R0
+	push {r3-r7,lr}
+	ldr r4, = lvbo_changdu
+	ldr r7, = lvbo_youyi
+	ldr r4, [r4]
+	ldr r7, [r7]
+	ldr r5, [r2]
+	mov r3, r5
+	lsls r3, r5, # 2
+	ldr r6, [r0, r3]
+	str r1, [r0, r3]
+	adds r5, r5, # 1
+	str r5, [r2]
+	cmp r5, r4
+	bne __huanchong_leijia
+	movs r5, # 0
+	str r5, [r2]
+__huanchong_leijia:
+	subs r0, r0, # 4
+	ldr r5, [r0]
+	adds r1, r1, r5
+	subs r1, r1, r6
+	str r1, [r0]
+	asrs r1, r1, r7	 @# 12 @12 @  7	@128
+	mov r0, r1
+	pop {r3-r7,pc}
+	.ltorg
+
+
+__ji_suan_fu_du:                            @ 计算幅度
+        @ 入r0= 实部，r1= 虚部
+        @ 出r0 = 幅度
+        @ Mag ~=Alpha * max(|I|, |Q|) + Beta * min(|I|, |Q|)
+        @ Alpha * Max + Beta * Min
+        push {r1-r3,lr}
+        movs r0, r0
+        bpl _shibubushifushu
+        mvns r0, r0                             @ 是负数转成正数
+        adds r0, r0, # 1
+_shibubushifushu:                               @ 实部不是负数
+        movs r1, r1
+        bpl _xububushifushu
+        mvns r1, r1                             @ 是负数转成正数
+        adds r1, r1, # 1
+_xububushifushu:                             @ 虚部不是负数
+        cmp r0, # 0
+        bne _panduanxubushibushi0
+        mov r0, r1
+        pop {r1-r3,pc}
+_panduanxubushibushi0:
+        cmp r1, # 0
+        bne _jisuanfudu1
+        pop {r1-r3,pc}
+_jisuanfudu1:
+        ldr r2, = 31066         @ Alpha q15 0.948059448969
+        ldr r3, = 12867         @ Beta q15 0.392699081699
+        cmp r1, r0
+        bhi _alpha_min_beta_max
+_alpha_max_beta_min:
+        muls r0, r0, r2
+        muls r1, r1, r3
+        asrs r0, r0, # 15
+        asrs r1, r1, # 15
+        adds r0, r0, r1
+        movs r1, # 1
+        pop {r1-r3,pc}
+_alpha_min_beta_max:
+        muls r0, r0, r3
+        muls r1, r1, r2
+        asrs r0, r0, # 15
+        asrs r1, r1, # 15
+        adds r0, r0, r1
+        movs r1, # 0
+        pop {r1-r3,pc}
+
+
+	
+	
 __hc595:
 __spi_chu_shi_hua_74hc595:
         ldr r0, = 0x40000800
@@ -179,7 +335,6 @@ adad:
         ldrh r0, [r1]
         bl __xie_spi1
         bl __lcd_xie_shu_ju
-
 dd:
 	b dd
 __bbkk:
@@ -776,13 +931,227 @@ _pendsv_handler:
 _systickzhongduan:
 aaa:
 	bx lr
+
+__adc_zhongduan:
+	push {r0-r7,lr}
+	
+	ldr r0, = 0x40000040
+	ldr r1, [r0]
+
+	ldr r3, = 0x20000c00
+	ldr r4, [r3]
+
+	ldr r5, = cos_sin_biao
+	ldr r6, [r5, r4]
+	adds r4, r4, # 4
+	ldr r7, [r5, r4]
+	adds r4, r4, # 4
+	str r4, [r3]
+	ldr r2, = 1600
+	cmp r4, r2
+	bne __dft_dft
+	
+	movs r4, # 0
+	str r4, [r3]
+	ldr r6, [r5, r4]
+	adds r4, r4, # 4
+	ldr r7, [r5, r4]
+	adds r4, r4, # 4
+	str r4, [r3]
+__dft_dft:
+	muls r6, r6, r1
+	muls r7, r7, r1
+	asrs r6, r6, # 15
+	asrs r7, r7, # 15
+
+	mov r1, r6
+	ldr r2, = lvboqizhizhen
+	ldr r0, =lvboqihuanchong
+	bl __lv_bo_qi
+	ldr r1, = shibu
+	str r0, [r1]
+
+	mov r1, r7
+        ldr r2, = lvboqizhizhen1
+	ldr r0, =lvboqihuanchong1
+	bl __lv_bo_qi
+	ldr r1, = xubu
+        str r0, [r1]
+
+	ldr r2, = shibu
+	ldr r3, = xubu
+	ldr r0, [r2]
+	ldr r1, [r3]
+	bl __ji_suan_fu_du
+	ldr r1, = fudu
+	str r0, [r1]
+
+	ldr r2, = 400
+	
+	subs r0, r0, r2
+	bpl __laba_zhankong
+	movs r0, # 0
+__laba_zhankong:
+        ldr r1, = 0x40001800
+        str r0, [r1, # 0x40]
+
+
+
+	ldr r2, = led_yanshi
+	ldr r3, [r2]
+	adds r3, r3, # 1
+	str r3, [r2]
+	ldr r4, = 500
+	cmp r3, r4
+	bcc __led_guan_bi
+	ldr r4, = 1000
+	cmp r3, r4
+	bcc __led_da_kai
+	movs r3, # 0
+	str r3, [r2]
+__led_da_kai:	
+        ldr r0, = 0x40001800    @GTIM
+	ldr r1, = 0x1001
+	str r1, [r0, # 0x20]    @开GTIM_CH1_ch4
+	
+	b __adc_zhongduan_fanhui
+
+__led_guan_bi:
+        ldr r0, = 0x40001800    @GTIM
+        ldr r1, = 0x01
+        str r1, [r0, # 0x20]    @开GTIM_CH1_ch4
+        b __adc_zhongduan_fanhui
+
+
+
+
+
+
+
+
+
+
+
+ccccc:
+	
+	ldr r5, = 0x20000100
+	ldr r0, = 0x40000040
+	ldr r1, [r0]
+	ldr r2, = 0x20000c00
+	ldr r3, [r2]
+	adds r3, r3, # 2
+	str r3, [r2]
+	ldr r4, = 2000
+	cmp r3, r4
+	bne __adc_caiyang
+	movs r3, # 0
+	str r3, [r2]
+__adc_caiyang:
+	strh r1, [r5, r3]
+	b __adc_zhongduan_fanhui
+	
+	
+__dft:
+	ldr r7, = adc_jishu
+	ldr r6, [r7]
+	adds r6, r6, # 2
+	str r6, [r7]
+	ldr r0, = 1000
+	cmp r6, r0
+	bne __suan_dft
+	
+	ldr r2, = shibu_huanchong
+	ldr r3, = xubu_huanchong
+	ldr r0, [r2]
+	ldr r1, [r3]
+	ldr r4, = shibu
+	ldr r5, = xubu
+	str r0, [r4]
+	str r1, [r5]
+	
+	bl __ji_suan_fu_du
+	ldr r1, = fudu
+	str r0, [r1]
+
+	ldr r1, = 0x40001800
+	str r0, [r1, # 0x40]
+	movs r6, # 0
+	str r6, [r7]
+	str r6, [r2]
+	str r6, [r3]
+	
+__suan_dft:
+	ldr r3, = 0x40000000
+	ldr r0, = cos_sin_biao
+	ldr r3, [r3, # 0x40]
+	mov r5, r6
+	lsls r5, r5, # 2
+	ldr r1, [r0, r5]	@cos
+	adds r5, r5, # 4
+	ldr r2, [r0, r5]	@sin
+
+	muls r1, r1, r3
+	asrs r1, r1, # 20
+	muls r2, r2, r3
+	asrs r2, r2, # 20
+
+	ldr r7, = shibu_huanchong
+	ldr r6, = xubu_huanchong
+	ldr r3, [r7]
+	ldr r4, [r6]
+	adds r3, r3, r1
+	adds r4, r4, r2
+	str r3, [r7]
+	str r4, [r6]
+
+
+
+
+
+	
+__adc_zhongduan_fanhui:	
+        ldr r0, = 0x40000000
+	movs r1, # 0x0e
+        str r1, [r0, # 0x78] @清除中断
+	pop {r0-r7,pc}
+
 	
 	.section .data
-	.equ zhanding,	0x20000100
-	.equ asciibiao,	0x20000500
+	.equ zhanding,			0x20000100
+	.equ lvboqizhizhen,             0x20000100
+	.equ lvboqihuanchong,           0x20000108
 
+	.equ lvboqizhizhen1,		0x20000450
+	.equ lvboqihuanchong1,		0x20000458
+	
+
+	
+	.equ led_yanshi,		0x20000edc
+	.equ fudu,			0x20000ee0
+	.equ adc_jishu,			0x20000ee4
+	.equ shibu_huanchong,		0x20000ee8
+	.equ xubu_huanchong,		0x20000eec
+	.equ shibu,			0x20000ef0
+	.equ xubu,			0x20000ef4
+	
+	.equ lvbo_youyi,		0x20000ef8
+	.equ lvbo_changdu,		0x20000efc
+	.equ asciibiao,			0x20000f00
+
+	.align 4
 a0123456789:
 	.ascii "0123456789"
+
+
+
+	.align 4
+cos_sin_biao:
+	.int 0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678E,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678E,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD872,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678E,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD872,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278D,0x79BC,0x678D,0x4B3C,0x8000,0x0000,0x678D,0xFFFFB4C4,0x278D,0xFFFF8644,0xFFFFD873,0xFFFF8644,0xFFFF9873,0xFFFFB4C4,0xFFFF8000,0x0000,0xFFFF9873,0x4B3C,0xFFFFD873,0x79BC,0x278E,0x79BC,0x678D,0x4B3C
+
+
+
+	
+	
 	.align 4
 ascii_biao:				@6*8
 	.byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 @
